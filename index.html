@@ -591,6 +591,234 @@
     <!-- ─── 토스트 컨테이너 ─── -->
     <div id="toast-wrap"></div>
 
+    <!-- ═══════════════════════════════════════════════════════════
+         ⚽ 조축 매칭판 — 기존 DOM과 완전 독립 (id 접두사: jochuk-)
+         ══════════════════════════════════════════════════════════ -->
+    <style>
+        .ji { display:block;width:100%;border:1px solid #e2e8f0;border-radius:8px;
+              padding:7px 12px;font-size:13px;outline:none;background:#fff;color:#1e293b; }
+        .ji:focus { outline:2px solid #10b981;outline-offset:-2px; }
+        #jochuk-panel { font-family:'Pretendard',system-ui,sans-serif; }
+        .jtab-btn.jtab-active { color:#10b981;border-bottom:2.5px solid #10b981; }
+        .jtab-pane.hidden { display:none; }
+    </style>
+
+    <!-- 진입 플로팅 버튼 (map-page 표시 시 JS가 unhide) -->
+    <div id="jochuk-fab"
+         style="display:none;position:fixed;bottom:88px;left:16px;z-index:30;">
+        <button id="jochuk-open-btn"
+            style="display:flex;align-items:center;gap:6px;background:#059669;color:#fff;
+                   padding:9px 16px;border-radius:99px;font-weight:800;font-size:13px;
+                   box-shadow:0 4px 16px rgba(5,150,105,0.35);border:none;cursor:pointer;">
+            ⚽ <span>조축 매칭판</span>
+        </button>
+    </div>
+
+    <!-- 전체화면 패널 -->
+    <div id="jochuk-panel"
+         style="display:none;position:fixed;inset:0;z-index:60;background:#fff;flex-direction:column;">
+
+        <!-- 헤더 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;
+                    padding:12px 16px;background:#059669;color:#fff;flex-shrink:0;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:22px;">⚽</span>
+                <span style="font-weight:900;font-size:17px;letter-spacing:-0.5px;">조축 매칭판</span>
+                <span style="font-size:11px;opacity:0.75;">부산·인천 특화</span>
+            </div>
+            <button id="jochuk-close-btn"
+                style="background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;
+                       width:30px;height:30px;border-radius:50%;font-size:16px;line-height:30px;">✕</button>
+        </div>
+
+        <!-- 탭 바 -->
+        <div style="display:flex;border-bottom:1px solid #e2e8f0;flex-shrink:0;background:#fff;">
+            <button class="jtab-btn jtab-active" data-jtab="exchange"
+                style="flex:1;padding:11px 4px;font-size:12px;font-weight:700;border:none;
+                       background:none;cursor:pointer;color:#64748b;">반반 교류전</button>
+            <button class="jtab-btn" data-jtab="recruit"
+                style="flex:1;padding:11px 4px;font-size:12px;font-weight:700;border:none;
+                       background:none;cursor:pointer;color:#64748b;">선모집 후대관</button>
+            <button class="jtab-btn" data-jtab="teams"
+                style="flex:1;padding:11px 4px;font-size:12px;font-weight:700;border:none;
+                       background:none;cursor:pointer;color:#64748b;">팀 디렉토리</button>
+        </div>
+
+        <!-- 탭 컨텐츠 -->
+        <div style="flex:1;overflow-y:auto;background:#f8fafc;">
+
+            <!-- ── A. 반반 교류전 ── -->
+            <div id="jochuk-tab-exchange" class="jtab-pane" style="padding:12px;display:flex;flex-direction:column;gap:10px;">
+                <!-- 필터 -->
+                <div style="display:flex;gap:6px;">
+                    <select id="jx-r" class="ji" style="flex:1;">
+                        <option value="">전체 지역</option>
+                        <option>부산</option><option>인천</option><option>서울</option><option>경기</option>
+                    </select>
+                    <select id="jx-sk" class="ji" style="flex:1;">
+                        <option value="">전체 실력</option>
+                        <option>입문</option><option>초급</option><option>중급</option><option>고급</option>
+                    </select>
+                    <button onclick="JochukPlatform.loadExchange()"
+                        style="padding:0 12px;background:#e2e8f0;border:none;border-radius:8px;
+                               font-size:12px;font-weight:700;cursor:pointer;">검색</button>
+                </div>
+                <!-- 등록 토글 -->
+                <button onclick="JochukPlatform.toggleForm('jx-form')"
+                    style="width:100%;padding:9px;border:2px dashed #10b981;border-radius:12px;
+                           background:none;color:#059669;font-weight:800;font-size:13px;cursor:pointer;">
+                    + 교류전 등록하기
+                </button>
+                <!-- 등록 폼 -->
+                <div id="jx-form" style="display:none;background:#fff;border:1px solid #e2e8f0;
+                                          border-radius:12px;padding:14px;display:none;flex-direction:column;gap:8px;">
+                    <input class="ji" id="jx-team_name" placeholder="팀명 *">
+                    <div style="display:flex;gap:6px;">
+                        <select class="ji" id="jx-region" style="flex:1;">
+                            <option value="">지역 *</option>
+                            <option>부산</option><option>인천</option><option>서울</option><option>경기</option>
+                        </select>
+                        <input class="ji" id="jx-district" placeholder="구/동 *" style="flex:1;">
+                    </div>
+                    <input class="ji" id="jx-pitch_name" placeholder="구장명 *">
+                    <input class="ji" id="jx-match_date" type="datetime-local">
+                    <div style="display:flex;gap:6px;">
+                        <select class="ji" id="jx-skill_level" style="flex:1;">
+                            <option>중급</option><option>입문</option><option>초급</option><option>고급</option>
+                        </select>
+                        <select class="ji" id="jx-age_group" style="flex:1;">
+                            <option>30대</option><option>20대</option><option>40대</option><option>50대+</option>
+                        </select>
+                    </div>
+                    <input class="ji" id="jx-fee_total" type="number" placeholder="총 구장비 (원, 반반 정산)" value="0">
+                    <input class="ji" id="jx-contact_url" placeholder="연락처 URL (오픈채팅 등) *">
+                    <button onclick="JochukPlatform.submitExchange()"
+                        style="width:100%;padding:10px;background:#059669;color:#fff;
+                               border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
+                        교류전 등록
+                    </button>
+                </div>
+                <!-- 리스트 -->
+                <div id="jx-list"></div>
+            </div>
+
+            <!-- ── B. 선모집 후대관 ── -->
+            <div id="jochuk-tab-recruit" class="jtab-pane hidden" style="padding:12px;display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;gap:6px;">
+                    <select id="jr-r" class="ji" style="flex:1;">
+                        <option value="">전체 지역</option>
+                        <option>부산</option><option>인천</option><option>서울</option><option>경기</option>
+                    </select>
+                    <button onclick="JochukPlatform.loadRecruit()"
+                        style="padding:0 12px;background:#e2e8f0;border:none;border-radius:8px;
+                               font-size:12px;font-weight:700;cursor:pointer;">검색</button>
+                </div>
+                <button onclick="JochukPlatform.toggleForm('jr-form')"
+                    style="width:100%;padding:9px;border:2px dashed #3b82f6;border-radius:12px;
+                           background:none;color:#2563eb;font-weight:800;font-size:13px;cursor:pointer;">
+                    + 모집 공고 올리기
+                </button>
+                <div id="jr-form" style="display:none;background:#fff;border:1px solid #e2e8f0;
+                                          border-radius:12px;padding:14px;display:none;flex-direction:column;gap:8px;">
+                    <input class="ji" id="jr-title" placeholder="공고 제목 *">
+                    <div style="display:flex;gap:6px;">
+                        <select class="ji" id="jr-region" style="flex:1;">
+                            <option value="">지역 *</option>
+                            <option>부산</option><option>인천</option><option>서울</option><option>경기</option>
+                        </select>
+                        <input class="ji" id="jr-district" placeholder="구/동 *" style="flex:1;">
+                    </div>
+                    <input class="ji" id="jr-pitch_name" placeholder="구장명 *">
+                    <input class="ji" id="jr-match_date" type="datetime-local">
+                    <input class="ji" id="jr-booking_deadline" type="datetime-local" placeholder="모집 마감일 *">
+                    <div style="display:flex;gap:6px;">
+                        <input class="ji" id="jr-min_players" type="number" placeholder="최소 인원" value="10" style="flex:1;">
+                        <input class="ji" id="jr-max_players" type="number" placeholder="최대 인원" value="14" style="flex:1;">
+                    </div>
+                    <input class="ji" id="jr-fee_per_person" type="number" placeholder="1인당 분담금 (원)" value="0">
+                    <input class="ji" id="jr-booking_url" placeholder="공공예약 링크 (선택)">
+                    <input class="ji" id="jr-host_nickname" placeholder="내 닉네임 *">
+                    <input class="ji" id="jr-contact_url" placeholder="연락처 URL *">
+                    <button onclick="JochukPlatform.submitRecruit()"
+                        style="width:100%;padding:10px;background:#2563eb;color:#fff;
+                               border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
+                        모집 공고 등록
+                    </button>
+                </div>
+                <div id="jr-list"></div>
+            </div>
+
+            <!-- ── C. 팀 디렉토리 ── -->
+            <div id="jochuk-tab-teams" class="jtab-pane hidden" style="padding:12px;display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <select id="jt-r" class="ji" style="flex:1;min-width:80px;">
+                        <option value="">전체 지역</option>
+                        <option>부산</option><option>인천</option><option>서울</option><option>경기</option>
+                    </select>
+                    <input class="ji" id="jt-d" placeholder="구/동" style="flex:1;min-width:60px;">
+                    <select id="jt-sk" class="ji" style="flex:1;min-width:80px;">
+                        <option value="">전체 실력</option>
+                        <option>입문</option><option>초급</option><option>중급</option><option>고급</option>
+                    </select>
+                    <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;">
+                        <input type="checkbox" id="jt-rec"> 모집중만
+                    </label>
+                    <button onclick="JochukPlatform.loadTeams()"
+                        style="padding:0 12px;background:#e2e8f0;border:none;border-radius:8px;
+                               font-size:12px;font-weight:700;cursor:pointer;">검색</button>
+                </div>
+                <button onclick="JochukPlatform.toggleForm('jt-form')"
+                    style="width:100%;padding:9px;border:2px dashed #7c3aed;border-radius:12px;
+                           background:none;color:#6d28d9;font-weight:800;font-size:13px;cursor:pointer;">
+                    + 우리 팀 등록하기
+                </button>
+                <div id="jt-form" style="display:none;background:#fff;border:1px solid #e2e8f0;
+                                          border-radius:12px;padding:14px;display:none;flex-direction:column;gap:8px;">
+                    <input class="ji" id="jt-team_name" placeholder="팀명 *">
+                    <div style="display:flex;gap:6px;">
+                        <select class="ji" id="jt-region" style="flex:1;">
+                            <option value="">지역 *</option>
+                            <option>부산</option><option>인천</option><option>서울</option><option>경기</option>
+                        </select>
+                        <input class="ji" id="jt-district" placeholder="구/동 *" style="flex:1;">
+                    </div>
+                    <input class="ji" id="jt-home_pitch" placeholder="홈구장 (선택)">
+                    <div style="display:flex;gap:6px;">
+                        <select class="ji" id="jt-match_day" style="flex:1;">
+                            <option>토요일</option><option>일요일</option><option>토·일</option><option>평일</option>
+                        </select>
+                        <select class="ji" id="jt-match_time" style="flex:1;">
+                            <option>오전 6-8시</option><option>오전 7-9시</option>
+                            <option>오전 8-10시</option><option>오전 10-12시</option><option>오후</option>
+                        </select>
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <select class="ji" id="jt-age_group" style="flex:1;">
+                            <option>30대</option><option>20대</option><option>40대</option><option>50대+</option><option>혼성</option>
+                        </select>
+                        <select class="ji" id="jt-skill_level" style="flex:1;">
+                            <option>중급</option><option>입문</option><option>초급</option><option>고급</option>
+                        </select>
+                    </div>
+                    <input class="ji" id="jt-member_count" type="number" placeholder="팀원 수" value="11">
+                    <input class="ji" id="jt-open_chat_url" placeholder="카카오 오픈채팅 URL">
+                    <textarea class="ji" id="jt-description" rows="3"
+                              style="resize:none;" placeholder="팀 소개"></textarea>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                        <input type="checkbox" id="jt-recruiting" checked> 용병/신입 모집 중
+                    </label>
+                    <button onclick="JochukPlatform.submitTeam()"
+                        style="width:100%;padding:10px;background:#7c3aed;color:#fff;
+                               border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
+                        팀 등록
+                    </button>
+                </div>
+                <div id="jt-list"></div>
+            </div>
+
+        </div><!-- /탭 컨텐츠 -->
+    </div><!-- /jochuk-panel -->
+
     <script src="main.js"></script>
 </body>
 </html>

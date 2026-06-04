@@ -952,6 +952,173 @@ async def serve_js():
     return FileResponse(p, media_type="application/javascript")
 
 
+# ═══════════════════════════════════════════════════════════════════
+# ⚽  조축 매칭 플랫폼 — 기존 코드와 완전 독립된 추가 모듈
+#     변수 prefix: _JX(교류전) / _JR(선모집) / _JT(팀 디렉토리)
+# ═══════════════════════════════════════════════════════════════════
+
+import uuid as _jochuk_uuid
+from asyncio import Lock as _JochukLock
+from typing import Optional as _JOpt
+from pydantic import BaseModel as _JModel
+
+# ── 인메모리 스토어 (서버 재시작 시 초기화, 운영 DB 없이 즉시 구동) ──
+_JX_STORE: list[dict] = []
+_JR_STORE: list[dict] = []
+_JT_STORE: list[dict] = []
+_JR_LOCK = _JochukLock()   # 선모집 참가 동시성 직렬화
+
+
+def _jid()  -> str: return str(_jochuk_uuid.uuid4())
+def _jnow() -> str: return datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+
+# ── A. 반반 교류전 ────────────────────────────────────────────────
+
+class _ExchangeIn(_JModel):
+    team_name:   str
+    region:      str
+    district:    str
+    pitch_name:  str
+    match_date:  str
+    skill_level: str = "중급"
+    age_group:   str = "30대"
+    fee_total:   int = 0
+    contact_url: str
+
+class _ExchangeApplyIn(_JModel):
+    guest_team:  str
+    message:     str = ""
+    contact_url: str = ""
+
+
+@app.get("/api/matches/exchange")
+async def jx_list(
+    region:      _JOpt[str] = None,
+    district:    _JOpt[str] = None,
+    skill_level: _JOpt[str] = None,
+):
+    out = _JX_STORE[:]
+    if region:      out = [m for m in out if m["region"] == region]
+    if district:    out = [m for m in out if district in m["district"]]
+    if skill_level: out = [m for m in out if m["skill_level"] == skill_level]
+    return {"status": "success", "data": sorted(out, key=lambda x: x["match_date"])}
+
+
+@app.post("/api/matches/exchange")
+async def jx_create(b: _ExchangeIn):
+    doc = {**b.dict(), "id": _jid(), "status": "open",
+           "fee_each": b.fee_total // 2,
+           "applications": [], "created_at": _jnow()}
+    _JX_STORE.append(doc)
+    return {"status": "success", "data": doc}
+
+
+@app.post("/api/matches/exchange/{mid}/apply")
+async def jx_apply(mid: str, b: _ExchangeApplyIn):
+    m = next((x for x in _JX_STORE if x["id"] == mid), None)
+    if not m:               raise HTTPException(404, "매치 없음")
+    if m["status"] != "open": raise HTTPException(400, "마감된 매치")
+    appl = {"id": _jid(), "guest_team": b.guest_team,
+            "message": b.message, "contact_url": b.contact_url, "at": _jnow()}
+    m["applications"].append(appl)
+    return {"status": "success", "data": appl}
+
+
+# ── B. 선모집 후대관 ──────────────────────────────────────────────
+
+class _RecruitIn(_JModel):
+    title:            str
+    region:           str
+    district:         str
+    pitch_name:       str
+    match_date:       str
+    booking_deadline: str
+    min_players:      int = 10
+    max_players:      int = 14
+    fee_per_person:   int = 0
+    booking_url:      str = ""
+    host_nickname:    str
+    contact_url:      str
+
+class _RecruitJoinIn(_JModel):
+    nickname: str
+
+
+@app.get("/api/matches/pre-recruit")
+async def jr_list(region: _JOpt[str] = None, district: _JOpt[str] = None):
+    out = [m for m in _JR_STORE if m["status"] in ("GATHERING", "CONFIRMED")]
+    if region:   out = [m for m in out if m["region"] == region]
+    if district: out = [m for m in out if district in m["district"]]
+    return {"status": "success", "data": sorted(out, key=lambda x: x["match_date"])}
+
+
+@app.post("/api/matches/pre-recruit")
+async def jr_create(b: _RecruitIn):
+    doc = {**b.dict(), "id": _jid(), "status": "GATHERING",
+           "current_players": 1, "participants": [b.host_nickname],
+           "created_at": _jnow()}
+    _JR_STORE.append(doc)
+    return {"status": "success", "data": doc}
+
+
+@app.post("/api/matches/pre-recruit/{mid}/join")
+async def jr_join(mid: str, b: _RecruitJoinIn):
+    async with _JR_LOCK:
+        m = next((x for x in _JR_STORE if x["id"] == mid), None)
+        if not m:                          raise HTTPException(404, "모집 글 없음")
+        if m["status"] != "GATHERING":     raise HTTPException(400, "모집 종료")
+        if m["current_players"] >= m["max_players"]: raise HTTPException(400, "인원 마감")
+        if b.nickname in m["participants"]: raise HTTPException(400, "이미 참가")
+        m["current_players"] += 1
+        m["participants"].append(b.nickname)
+        if m["current_players"] >= m["min_players"]:
+            m["status"] = "CONFIRMED"
+        return {"status": "success", "data": {
+            "current_players": m["current_players"],
+            "match_status":    m["status"],
+        }}
+
+
+# ── C. 조축 팀 디렉토리 ────────────────────────────────────────────
+
+class _TeamIn(_JModel):
+    team_name:     str
+    region:        str
+    district:      str
+    home_pitch:    str  = ""
+    match_day:     str  = "토요일"
+    match_time:    str  = "오전 7-9시"
+    age_group:     str
+    skill_level:   str
+    member_count:  int  = 11
+    recruiting:    bool = True
+    open_chat_url: str  = ""
+    description:   str  = ""
+
+
+@app.get("/api/teams")
+async def jt_list(
+    region:      _JOpt[str]  = None,
+    district:    _JOpt[str]  = None,
+    skill_level: _JOpt[str]  = None,
+    recruiting:  _JOpt[bool] = None,
+):
+    out = _JT_STORE[:]
+    if region:               out = [t for t in out if t["region"] == region]
+    if district:             out = [t for t in out if district in t["district"]]
+    if skill_level:          out = [t for t in out if t["skill_level"] == skill_level]
+    if recruiting is not None: out = [t for t in out if t["recruiting"] == recruiting]
+    return {"status": "success", "data": out}
+
+
+@app.post("/api/teams")
+async def jt_create(b: _TeamIn):
+    doc = {**b.dict(), "id": _jid(), "created_at": _jnow()}
+    _JT_STORE.append(doc)
+    return {"status": "success", "data": doc}
+
+
 if __name__ == "__main__":
     is_prod = os.environ.get("ENV") == "production"
     host    = "0.0.0.0" if is_prod else "127.0.0.1"

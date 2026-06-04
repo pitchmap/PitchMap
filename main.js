@@ -1229,3 +1229,263 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 });
+
+// ═══════════════════════════════════════════════════════════════
+// ⚽  조축 매칭 플랫폼 모듈 — 기존 DOMContentLoaded 클로저와 완전 독립
+//     전역 노출: window.JochukPlatform (버튼 onclick 에서 사용)
+// ═══════════════════════════════════════════════════════════════
+window.JochukPlatform = (function () {
+    'use strict';
+
+    const _base = () =>
+        (document.documentElement.dataset.apiUrl || window.location.origin).replace(/\/$/, '');
+
+    const $  = id  => document.getElementById(id);
+    const v  = id  => ($(`${id}`)?.value  ?? '').trim();
+    const ck = id  => !!$(`${id}`)?.checked;
+
+    function fmtDate(iso) {
+        if (!iso) return '';
+        try { return new Date(iso).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
+        catch { return iso; }
+    }
+
+    // ── 탭 전환 ────────────────────────────────────────────────
+    function switchTab(tab) {
+        document.querySelectorAll('.jtab-pane').forEach(p => {
+            p.classList.add('hidden');
+            p.style.display = 'none';
+        });
+        document.querySelectorAll('.jtab-btn').forEach(b => {
+            b.classList.remove('jtab-active');
+        });
+        const pane = $(`jochuk-tab-${tab}`);
+        if (pane) { pane.classList.remove('hidden'); pane.style.display = 'flex'; }
+        const btn = document.querySelector(`.jtab-btn[data-jtab="${tab}"]`);
+        if (btn) btn.classList.add('jtab-active');
+        if (tab === 'exchange') loadExchange();
+        if (tab === 'recruit')  loadRecruit();
+        if (tab === 'teams')    loadTeams();
+    }
+
+    // ── 폼 토글 ────────────────────────────────────────────────
+    function toggleForm(id) {
+        const el = $(id);
+        if (!el) return;
+        const hidden = el.style.display === 'none' || el.style.display === '';
+        el.style.display = hidden ? 'flex' : 'none';
+        el.style.flexDirection = 'column';
+    }
+
+    // ── 패널 열기/닫기 ─────────────────────────────────────────
+    function openPanel() {
+        const p = $('jochuk-panel');
+        if (p) { p.style.display = 'flex'; }
+        switchTab('exchange');
+    }
+    function closePanel() {
+        const p = $('jochuk-panel');
+        if (p) p.style.display = 'none';
+    }
+
+    // ── 공통 카드 래퍼 ─────────────────────────────────────────
+    function card(content) {
+        return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;
+                            padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+                    ${content}
+                </div>`;
+    }
+    function badge(txt, bg, color) {
+        return `<span style="display:inline-block;padding:2px 8px;border-radius:99px;
+                             font-size:10px;font-weight:800;background:${bg};color:${color};">${txt}</span>`;
+    }
+    function emptyMsg(txt) {
+        return `<p style="text-align:center;color:#94a3b8;font-size:13px;padding:32px 0;">${txt}</p>`;
+    }
+
+    // ── A. 교류전 ──────────────────────────────────────────────
+    async function loadExchange() {
+        const p = new URLSearchParams();
+        const r = v('jx-r'); const sk = v('jx-sk');
+        if (r)  p.set('region', r);
+        if (sk) p.set('skill_level', sk);
+        const res = await fetch(`${_base()}/api/matches/exchange?${p}`);
+        const { data } = await res.json();
+        if (!$('jx-list')) return;
+        $('jx-list').innerHTML = !data?.length ? emptyMsg('등록된 교류전이 없습니다') :
+            data.map(m => card(`
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+                    <span style="font-weight:800;font-size:15px;">${m.team_name}</span>
+                    ${m.status==='open' ? badge('모집중','#d1fae5','#065f46') : badge('마감','#f1f5f9','#64748b')}
+                </div>
+                <p style="font-size:11px;color:#94a3b8;margin-bottom:4px;">${m.region} ${m.district} · ${m.skill_level} · ${m.age_group}</p>
+                <p style="font-size:13px;color:#334155;margin-bottom:2px;">📍 ${m.pitch_name}</p>
+                <p style="font-size:12px;color:#64748b;margin-bottom:8px;">🗓 ${fmtDate(m.match_date)}</p>
+                ${m.fee_total > 0 ? `<p style="font-size:12px;color:#475569;margin-bottom:8px;">💰 총 ${m.fee_total.toLocaleString()}원 → 팀당 <strong>${m.fee_each.toLocaleString()}원</strong></p>` : ''}
+                ${m.status==='open' && m.contact_url ? `<a href="${m.contact_url}" target="_blank" rel="noopener"
+                    style="display:block;text-align:center;padding:9px;background:#059669;color:#fff;
+                           border-radius:8px;font-weight:800;font-size:13px;text-decoration:none;">연락하기 →</a>` : ''}
+            `)).join('');
+    }
+
+    async function submitExchange() {
+        const body = {
+            team_name:   v('jx-team_name'),   region:      v('jx-region'),
+            district:    v('jx-district'),     pitch_name:  v('jx-pitch_name'),
+            match_date:  v('jx-match_date'),   skill_level: v('jx-skill_level'),
+            age_group:   v('jx-age_group'),    fee_total:   parseInt(v('jx-fee_total')) || 0,
+            contact_url: v('jx-contact_url'),
+        };
+        if (!body.team_name || !body.region || !body.district || !body.pitch_name || !body.match_date || !body.contact_url)
+            return alert('* 표시 항목을 모두 입력하세요');
+        const res = await fetch(`${_base()}/api/matches/exchange`,
+            { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        if (!res.ok) return alert('등록 실패');
+        toggleForm('jx-form');
+        ['jx-team_name','jx-district','jx-pitch_name','jx-match_date','jx-contact_url']
+            .forEach(id => { if ($(id)) $(id).value = ''; });
+        await loadExchange();
+    }
+
+    // ── B. 선모집 후대관 ───────────────────────────────────────
+    async function loadRecruit() {
+        const p = new URLSearchParams();
+        const r = v('jr-r');
+        if (r) p.set('region', r);
+        const res = await fetch(`${_base()}/api/matches/pre-recruit?${p}`);
+        const { data } = await res.json();
+        if (!$('jr-list')) return;
+        $('jr-list').innerHTML = !data?.length ? emptyMsg('등록된 모집 공고가 없습니다') :
+            data.map(m => {
+                const pct = Math.round(m.current_players / m.max_players * 100);
+                const confirmed = m.status === 'CONFIRMED';
+                return card(`
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+                        <span style="font-weight:800;font-size:15px;">${m.title}</span>
+                        ${confirmed ? badge('대관확정','#dbeafe','#1e40af') : badge('모집중','#dcfce7','#15803d')}
+                    </div>
+                    <p style="font-size:11px;color:#94a3b8;margin-bottom:4px;">${m.region} ${m.district}</p>
+                    <p style="font-size:13px;color:#334155;margin-bottom:2px;">📍 ${m.pitch_name}</p>
+                    <p style="font-size:12px;color:#64748b;margin-bottom:8px;">🗓 ${fmtDate(m.match_date)}</p>
+                    ${m.fee_per_person > 0 ? `<p style="font-size:12px;color:#475569;margin-bottom:6px;">💰 1인 ${m.fee_per_person.toLocaleString()}원</p>` : ''}
+                    <div style="margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-bottom:4px;">
+                            <span>참가 인원</span>
+                            <span>${m.current_players} / ${m.max_players}명 (최소 ${m.min_players}명)</span>
+                        </div>
+                        <div style="height:6px;background:#f1f5f9;border-radius:99px;overflow:hidden;">
+                            <div style="height:100%;width:${pct}%;background:${confirmed?'#3b82f6':'#4ade80'};border-radius:99px;transition:width 0.3s;"></div>
+                        </div>
+                    </div>
+                    ${!confirmed ? `
+                    <div style="display:flex;gap:6px;">
+                        <input id="jr-nick-${m.id}" class="ji" placeholder="닉네임 입력" style="flex:1;">
+                        <button onclick="JochukPlatform.joinRecruit('${m.id}')"
+                            style="padding:0 14px;background:#2563eb;color:#fff;border:none;
+                                   border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">참가 신청</button>
+                    </div>` : `<p style="font-size:12px;color:#2563eb;font-weight:800;">✅ 인원 확정! 대관 진행 중</p>`}
+                `);
+            }).join('');
+    }
+
+    async function submitRecruit() {
+        const body = {
+            title: v('jr-title'),             region:           v('jr-region'),
+            district: v('jr-district'),        pitch_name:       v('jr-pitch_name'),
+            match_date: v('jr-match_date'),    booking_deadline: v('jr-booking_deadline'),
+            min_players: parseInt(v('jr-min_players')) || 10,
+            max_players: parseInt(v('jr-max_players')) || 14,
+            fee_per_person: parseInt(v('jr-fee_per_person')) || 0,
+            booking_url: v('jr-booking_url'),  host_nickname:    v('jr-host_nickname'),
+            contact_url: v('jr-contact_url'),
+        };
+        if (!body.title || !body.region || !body.district || !body.pitch_name || !body.match_date || !body.host_nickname)
+            return alert('* 표시 항목을 모두 입력하세요');
+        const res = await fetch(`${_base()}/api/matches/pre-recruit`,
+            { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        if (!res.ok) return alert('등록 실패');
+        toggleForm('jr-form');
+        await loadRecruit();
+    }
+
+    async function joinRecruit(matchId) {
+        const nick = v(`jr-nick-${matchId}`);
+        if (!nick) return alert('닉네임을 입력하세요');
+        const res = await fetch(`${_base()}/api/matches/pre-recruit/${matchId}/join`,
+            { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ nickname: nick }) });
+        const json = await res.json();
+        if (!res.ok) return alert(json.detail || '오류 발생');
+        await loadRecruit();
+    }
+
+    // ── C. 팀 디렉토리 ─────────────────────────────────────────
+    async function loadTeams() {
+        const p = new URLSearchParams();
+        const r = v('jt-r'), d = v('jt-d'), sk = v('jt-sk'), rec = ck('jt-rec');
+        if (r)   p.set('region', r);
+        if (d)   p.set('district', d);
+        if (sk)  p.set('skill_level', sk);
+        if (rec) p.set('recruiting', 'true');
+        const res = await fetch(`${_base()}/api/teams?${p}`);
+        const { data } = await res.json();
+        if (!$('jt-list')) return;
+        $('jt-list').innerHTML = !data?.length ? emptyMsg('등록된 팀이 없습니다') :
+            data.map(t => card(`
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;">
+                    <span style="font-weight:800;font-size:15px;">${t.team_name}</span>
+                    ${t.recruiting ? badge('모집중','#d1fae5','#065f46') : ''}
+                </div>
+                <p style="font-size:11px;color:#94a3b8;margin-bottom:4px;">${t.region} ${t.district} · ${t.age_group} · ${t.skill_level}</p>
+                <p style="font-size:13px;color:#334155;margin-bottom:2px;">⏰ ${t.match_day} ${t.match_time} · ${t.member_count}명</p>
+                ${t.home_pitch ? `<p style="font-size:13px;color:#334155;margin-bottom:4px;">📍 ${t.home_pitch}</p>` : ''}
+                ${t.description ? `<p style="font-size:12px;color:#64748b;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${t.description}</p>` : ''}
+                ${t.open_chat_url ? `<a href="${t.open_chat_url}" target="_blank" rel="noopener"
+                    style="font-size:13px;color:#2563eb;font-weight:700;text-decoration:underline;">오픈채팅 →</a>` : ''}
+            `)).join('');
+    }
+
+    async function submitTeam() {
+        const body = {
+            team_name: v('jt-team_name'),     region:        v('jt-region'),
+            district:  v('jt-district'),       home_pitch:    v('jt-home_pitch'),
+            match_day: v('jt-match_day'),      match_time:    v('jt-match_time'),
+            age_group: v('jt-age_group'),      skill_level:   v('jt-skill_level'),
+            member_count: parseInt(v('jt-member_count')) || 11,
+            open_chat_url: v('jt-open_chat_url'),
+            description:   v('jt-description'),
+            recruiting:    ck('jt-recruiting'),
+        };
+        if (!body.team_name || !body.region || !body.district || !body.age_group || !body.skill_level)
+            return alert('* 표시 항목을 모두 입력하세요');
+        const res = await fetch(`${_base()}/api/teams`,
+            { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        if (!res.ok) return alert('등록 실패');
+        toggleForm('jt-form');
+        await loadTeams();
+    }
+
+    // ── 이벤트 바인딩 ──────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        $('jochuk-open-btn')?.addEventListener('click', openPanel);
+        $('jochuk-close-btn')?.addEventListener('click', closePanel);
+
+        document.querySelectorAll('.jtab-btn').forEach(btn =>
+            btn.addEventListener('click', () => switchTab(btn.dataset.jtab))
+        );
+
+        // map-page가 visible 상태로 바뀌면 FAB 표시
+        const mapEl = document.getElementById('map-page');
+        if (mapEl) {
+            new MutationObserver(() => {
+                const visible = !mapEl.classList.contains('opacity-0')
+                             && !mapEl.classList.contains('pointer-events-none');
+                const fab = $('jochuk-fab');
+                if (fab) fab.style.display = visible ? 'block' : 'none';
+            }).observe(mapEl, { attributes: true, attributeFilter: ['class'] });
+        }
+    });
+
+    return { loadExchange, submitExchange, loadRecruit, submitRecruit, joinRecruit,
+             loadTeams, submitTeam, toggleForm, openPanel, closePanel };
+
+})();
