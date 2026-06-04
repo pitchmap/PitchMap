@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>풋살모여 — 전국 풋살 매치 통합 검색</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    window.__kakaoSDKReady = false;
+    (function () {
+        const base = (document.documentElement.dataset.apiUrl || 'http://127.0.0.1:8000')
+                     .replace(/\/$/, '');
+        fetch(base + '/api/config', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (cfg) {
+                const s = document.createElement('script');
+                s.src = '//dapi.kakao.com/v2/maps/sdk.js?appkey='
+                        + cfg.kakao_app_key + '&libraries=services&autoload=false';
+                s.onload = function () {
+                    kakao.maps.load(function () {
+                        window.__kakaoSDKReady = true;
+                        window.dispatchEvent(new CustomEvent('kakao-maps-ready'));
+                    });
+                };
+                s.onerror = function () {
+                    console.error('[풋살모여] Kakao SDK 로드 실패 — 앱키를 확인하세요');
+                };
+                document.head.appendChild(s);
+            })
+            .catch(function () {
+                console.error('[풋살모여] /api/config 실패 — 서버가 실행 중인지 확인하세요');
+            });
+    })();
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Pretendard', sans-serif; overflow: hidden; margin: 0; }
+
+        /* ── 웰컴 배경 ─────────────────── */
+        .welcome-bg {
+            background: linear-gradient(135deg, #0a0e1a 0%, #0f172a 40%, #0d1f3c 70%, #0a1628 100%);
+        }
+        .welcome-bg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 30%, rgba(37,99,235,0.12), transparent),
+                radial-gradient(ellipse 60% 80% at 80% 70%, rgba(16,185,129,0.08), transparent);
+            pointer-events: none;
+        }
+        /* 미세 그리드 패턴 (축구장 느낌) */
+        .welcome-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+        }
+
+        /* ── 유리 카드 ─────────────────── */
+        .glass-card {
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+        }
+
+        /* ── select 스타일 ─────────────── */
+        .dark-select {
+            appearance: none;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: white;
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 600;
+            padding: 12px 40px 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        .dark-select:hover { background: rgba(255,255,255,0.12); }
+        .dark-select:focus { outline: 2px solid rgba(37,99,235,0.6); outline-offset: 2px; }
+        .dark-select option { background: #1e293b; color: white; }
+
+        /* ── 웰컴 페이지 진입 애니메이션 ─── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-up { animation: fadeUp 0.6s ease both; }
+        .fade-up-1 { animation-delay: 0.05s; }
+        .fade-up-2 { animation-delay: 0.15s; }
+        .fade-up-3 { animation-delay: 0.25s; }
+        .fade-up-4 { animation-delay: 0.35s; }
+
+        /* ── 플랫폼 배지 ─────────────────── */
+        .platform-pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 10px; border-radius: 99px;
+            font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+        }
+
+        /* ── 지도 페이지 컨트롤 바 ────────── */
+        .map-topbar {
+            position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+            background: rgba(255,255,255,0.97);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 10px 14px;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        /* ── 날짜 필터 칩 바 ─────────────── */
+        .chips-bar {
+            position: absolute; top: 58px; left: 0; right: 0; z-index: 20;
+            background: rgba(255,255,255,0.97);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 8px 14px;
+            display: flex; align-items: center; gap: 6px;
+            overflow-x: auto; white-space: nowrap;
+        }
+        .chips-bar::-webkit-scrollbar { display: none; }
+
+        .chip {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 5px 12px; border-radius: 99px;
+            font-size: 12px; font-weight: 700;
+            border: 1.5px solid #e2e8f0;
+            background: white; color: #64748b;
+            cursor: pointer; white-space: nowrap;
+            transition: all 0.18s ease; flex-shrink: 0;
+            letter-spacing: -0.1px;
+        }
+        .chip:hover { border-color: #94a3b8; color: #334155; background: #f8fafc; }
+        .chip.active         { background: #2563eb; border-color: #2563eb; color: white; }
+        .chip.active-today   { background: #16a34a; border-color: #16a34a; color: white; }
+        .chip.active-tomorrow{ background: #2563eb; border-color: #2563eb; color: white; }
+        .chip.active-dayafter{ background: #7c3aed; border-color: #7c3aed; color: white; }
+        .chip.active-public  { background: #64748b; border-color: #64748b; color: white; }
+        .chip-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+        /* ── 지도 페이지 콘텐츠 시작 위치 ─── */
+        #map-content-area {
+            position: absolute; top: 104px; left: 0; right: 0; bottom: 0;
+        }
+
+        /* ── 목록 뷰 ─────────────────────── */
+        #list-view {
+            position: absolute; inset: 0; background: #f8fafc;
+            z-index: 25; display: none; flex-direction: column;
+        }
+        #list-view.show { display: flex; }
+        .list-header { padding: 14px 16px; background: white; border-bottom: 1px solid #e2e8f0; }
+        .list-body { flex: 1; overflow-y: auto; }
+        .list-date-header {
+            padding: 10px 16px; background: #f1f5f9;
+            position: sticky; top: 0; z-index: 1;
+            border-bottom: 2px solid currentColor;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .list-stadium-row {
+            padding: 13px 16px; border-bottom: 1px solid #e2e8f0;
+            background: white; display: flex; align-items: center; gap: 12px;
+            cursor: pointer; transition: background 0.12s;
+        }
+        .list-stadium-row:hover { background: #f8fafc; }
+        .list-platform-dot {
+            width: 38px; height: 38px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 800; font-size: 13px; flex-shrink: 0;
+        }
+
+        /* ── 사이드 패널 ─────────────────── */
+        #side-panel {
+            position: absolute; top: 104px; right: 0; bottom: 0;
+            width: 340px; background: white; box-shadow: -4px 0 24px rgba(0,0,0,0.1);
+            z-index: 30; transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+            display: flex; flex-direction: column;
+        }
+        #side-panel.open { transform: translateX(0); }
+        @media (min-width: 640px) { #side-panel { width: 380px; } }
+
+        /* ── 사이드 패널 커스텀 스크롤바 ─── */
+        #match-list-scroll::-webkit-scrollbar { width: 4px; }
+        #match-list-scroll::-webkit-scrollbar-track { background: transparent; }
+        #match-list-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+
+        /* ── 사용자 위치 맥동 ─────────────── */
+        @keyframes locPulse {
+            0%   { transform: scale(1); opacity: 0.5; }
+            70%  { transform: scale(2.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        .loc-ring { animation: locPulse 2s ease-out infinite; }
+
+        /* ── 토스트 ──────────────────────── */
+        #toast-wrap {
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            z-index: 9999; display: flex; flex-direction: column; gap: 8px;
+            pointer-events: none; align-items: center;
+        }
+        .toast {
+            padding: 10px 18px; border-radius: 12px;
+            font-size: 13px; font-weight: 600; color: white;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+            opacity: 0; transform: translateY(10px);
+            transition: all 0.25s ease; white-space: nowrap;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast-success { background: #16a34a; }
+        .toast-info    { background: #2563eb; }
+        .toast-warn    { background: #f97316; }
+        .toast-error   { background: #dc2626; }
+
+        /* ── 지역 로딩 배지 ──────────────── */
+        .region-badge {
+            position: absolute; top: 116px; left: 50%; transform: translateX(-50%);
+            z-index: 21; display: none; align-items: center; gap: 8px;
+            background: rgba(255,255,255,0.95); border-radius: 99px;
+            padding: 6px 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            font-size: 12px; font-weight: 600; color: #475569; white-space: nowrap;
+        }
+        .region-badge.show { display: flex; }
+
+        /* ── 통계 바 ─────────────────────── */
+        .stats-bar {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 20; display: none; align-items: center; gap: 10px;
+            background: rgba(255,255,255,0.95); border-radius: 99px;
+            padding: 8px 18px; box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+            font-size: 12px; font-weight: 700; white-space: nowrap;
+        }
+        .stats-bar.show { display: flex; }
+        .stats-sep { color: #cbd5e1; font-size: 10px; }
+
+        /* ── 범례 ─────────────────────────── */
+        .legend-box {
+            position: absolute; bottom: 20px; left: 14px;
+            z-index: 20; background: rgba(255,255,255,0.95);
+            border-radius: 12px; padding: 10px 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+            font-size: 11px; font-weight: 600;
+        }
+        .legend-item { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+        .legend-item:last-child { margin-bottom: 0; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+        /* ── 지도 로딩 오버레이 ──────────── */
+        #map-loading {
+            position: absolute; inset: 0; background: rgba(255,255,255,0.88);
+            z-index: 40; display: none; flex-direction: column;
+            align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        #map-loading.show { display: flex; }
+
+        /* ── 검색 입력 ───────────────────── */
+        .search-input {
+            flex: 1; border: 1.5px solid #e2e8f0; border-radius: 10px;
+            padding: 7px 12px; font-size: 13px; font-family: 'Pretendard', sans-serif;
+            font-weight: 500; outline: none; background: #f8fafc; color: #1e293b;
+            transition: border-color 0.15s;
+        }
+        .search-input:focus { border-color: #2563eb; background: white; }
+        .search-input::placeholder { color: #94a3b8; }
+
+        /* ── 즐겨찾기 ───────────────────── */
+        .fav-btn {
+            font-size: 18px; cursor: pointer; transition: transform 0.15s;
+            flex-shrink: 0; line-height: 1;
+        }
+        .fav-btn:hover { transform: scale(1.2); }
+        .fav-star { color: #f59e0b; }
+        .fav-empty { color: #cbd5e1; }
+
+        /* ── 빈 상태 ─────────────────────── */
+        .empty-state {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; height: 100%; padding: 40px 20px;
+            color: #94a3b8; text-align: center;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen relative">
+
+    <!-- ═══════════════════════════════════════ 웰컴 페이지 ═══ -->
+    <div id="welcome-page"
+         class="welcome-bg absolute inset-0 z-50 flex items-center justify-center
+                transition-opacity duration-500 ease-in-out overflow-hidden">
+        <div class="relative z-10 w-full max-w-md px-6 py-8 text-center">
+
+            <!-- 브랜딩 -->
+            <div class="fade-up fade-up-1 mb-6">
+                <div class="text-6xl mb-3 filter drop-shadow-lg">⚽</div>
+                <h1 class="text-4xl font-black text-white tracking-tight mb-2">풋살모여</h1>
+                <p class="text-slate-400 font-medium text-sm">
+                    전국 풋살 소셜매치 · 공공구장 통합 검색
+                </p>
+            </div>
+
+            <!-- 플랫폼 배지 -->
+            <div class="fade-up fade-up-2 flex justify-center gap-2 mb-7 flex-wrap">
+                <span class="platform-pill" style="background:rgba(37,99,235,0.2);border:1px solid rgba(37,99,235,0.4);color:#93c5fd;">
+                    <span style="width:6px;height:6px;border-radius:50%;background:#2563eb;flex-shrink:0;"></span>플랩풋볼
+                </span>
+                <span class="platform-pill" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#94a3b8;">
+                    <span style="width:6px;height:6px;border-radius:50%;background:#94a3b8;flex-shrink:0;"></span>어반풋볼
+                </span>
+                <span class="platform-pill" style="background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.35);color:#86efac;">
+                    <span style="width:6px;height:6px;border-radius:50%;background:#16a34a;flex-shrink:0;"></span>공공구장
+                </span>
+            </div>
+
+            <!-- 컨트롤 카드 -->
+            <div class="fade-up fade-up-3 glass-card p-5 mb-4">
+
+                <!-- 위치 감지 배지 (동적) -->
+                <div id="location-badge"
+                     class="hidden flex items-center justify-center gap-2 mb-4 text-xs font-semibold text-emerald-400">
+                    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <span>현재 위치 감지됨 — 지역이 자동 설정됩니다</span>
+                </div>
+
+                <!-- 지역 선택 -->
+                <div class="relative mb-3">
+                    <select id="region-filter" class="dark-select">
+                        <option value="서울">📍 서울</option>
+                        <option value="경기">📍 경기</option>
+                        <option value="인천">📍 인천</option>
+                        <option value="부산">📍 부산</option>
+                        <option value="대구">📍 대구</option>
+                        <option value="광주">📍 광주</option>
+                        <option value="대전/세종">📍 대전/세종</option>
+                        <option value="울산">📍 울산</option>
+                        <option value="강원">📍 강원</option>
+                        <option value="충북">📍 충북</option>
+                        <option value="충남">📍 충남</option>
+                        <option value="전북">📍 전북</option>
+                        <option value="전남">📍 전남</option>
+                        <option value="경북">📍 경북</option>
+                        <option value="경남">📍 경남</option>
+                        <option value="제주">📍 제주</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-white opacity-60">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- 조회 기간 선택 -->
+                <div class="relative mb-3">
+                    <select id="days-filter" class="dark-select">
+                        <option value="7">📅 7일 이내</option>
+                        <option value="14" selected>📅 14일 이내 (기본)</option>
+                        <option value="21">📅 21일 이내</option>
+                        <option value="30">📅 30일 이내</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-white opacity-60">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- 플랫폼 선택 -->
+                <div class="relative mb-5">
+                    <select id="platform-filter" class="dark-select">
+                        <option value="ALL">모든 플랫폼</option>
+                        <option value="PLAB">플랩풋볼 (PLAB)</option>
+                        <option value="URBAN">어반풋볼 (URBAN)</option>
+                        <option value="PUBLIC">공공대관</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-white opacity-60">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- CTA 버튼 -->
+                <button id="search-btn"
+                        class="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700
+                               text-white font-extrabold py-3.5 rounded-2xl
+                               flex items-center justify-center gap-2 text-base
+                               transition-all duration-200 shadow-lg shadow-blue-900/40
+                               hover:scale-[1.02] active:scale-[0.98]">
+                    <span>매치 찾아보기</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- 하단 안내 -->
+            <p class="fade-up fade-up-4 text-xs text-slate-600 font-medium">
+                지도 이동 시 해당 지역 매치가 자동으로 추가됩니다
+            </p>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ 지도 페이지 ═══ -->
+    <div id="map-page" class="absolute inset-0 z-10 opacity-0 pointer-events-none transition-opacity duration-500">
+
+        <!-- ─── 상단 컨트롤 바 ─── -->
+        <div class="map-topbar">
+            <!-- 뒤로 가기 -->
+            <button id="back-btn"
+                    class="flex items-center gap-1.5 text-slate-500 hover:text-slate-900
+                           font-semibold text-sm transition-colors flex-shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </button>
+
+            <!-- 구장 검색 -->
+            <input id="stadium-search" type="text" placeholder="구장명 검색..." class="search-input">
+
+            <!-- 내 주변 버튼 (GPS 통합) -->
+            <button id="gps-btn"
+                    class="flex-shrink-0 flex items-center gap-1.5 border border-slate-200 rounded-lg
+                           px-2.5 py-1.5 text-xs font-bold text-slate-600 hover:text-blue-600
+                           hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
+                    title="내 주변 구장 보기">
+                <svg id="gps-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                    <circle cx="12" cy="9" r="2.5" fill="currentColor" class="text-blue-500" style="opacity:.25"/>
+                    <circle cx="12" cy="9" r="1.5" fill="currentColor"/>
+                </svg>
+                <span id="gps-label">내 주변</span>
+            </button>
+
+            <!-- 현재 지역 태그 -->
+            <span id="current-region-tag"
+                  class="flex-shrink-0 text-xs font-bold text-blue-600 bg-blue-50
+                         border border-blue-100 rounded-full px-2.5 py-1.5 hidden sm:block whitespace-nowrap">
+                서울
+            </span>
+
+            <!-- 지도 / 목록 토글 -->
+            <button id="view-toggle-btn"
+                    class="flex-shrink-0 flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200
+                           text-slate-700 font-bold text-xs rounded-lg px-2.5 py-1.5 transition-colors">
+                <svg id="view-icon-list" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                </svg>
+                <svg id="view-icon-map" class="w-3.5 h-3.5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                </svg>
+                <span id="view-toggle-label">목록</span>
+            </button>
+        </div>
+
+        <!-- ─── 날짜 필터 칩 바 (동적 생성) ─── -->
+        <div class="chips-bar" id="chips-bar">
+            <button class="chip active" data-date="ALL">전체</button>
+            <!-- 날짜 칩은 데이터 로드 후 JS가 동적으로 삽입 -->
+        </div>
+
+        <!-- ─── 지도 + 기타 요소 컨테이너 ─── -->
+        <div id="map-content-area">
+
+            <!-- 지도 -->
+            <div id="map" class="w-full h-full"></div>
+
+            <!-- 지역 로딩 배지 -->
+            <div id="region-loading-badge" class="region-badge">
+                <svg class="w-3.5 h-3.5 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                <span></span>
+            </div>
+
+            <!-- 통계 바 -->
+            <div id="map-stats" class="stats-bar">
+                <span id="stats-total" class="text-slate-700"></span>
+                <span class="stats-sep">·</span>
+                <span id="stats-plab"  class="text-blue-600"></span>
+                <span class="stats-sep">·</span>
+                <span id="stats-urban" class="text-slate-800"></span>
+                <span class="stats-sep">·</span>
+                <span id="stats-public" class="text-green-600"></span>
+            </div>
+
+            <!-- 범례 -->
+            <div class="legend-box">
+                <div class="legend-item"><div class="legend-dot" style="background:#2563eb;"></div><span style="color:#475569;">플랩풋볼</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#1e293b;"></div><span style="color:#475569;">어반풋볼</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#16a34a;"></div><span style="color:#475569;">공공대관</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#7c3aed;"></div><span style="color:#475569;">복합</span></div>
+            </div>
+
+            <!-- 지도 로딩 오버레이 -->
+            <div id="map-loading">
+                <div class="text-4xl animate-bounce mb-3">⚽</div>
+                <p class="text-lg font-bold text-slate-700 animate-pulse">매치 정보를 찾고 있습니다...</p>
+                <p class="text-sm text-slate-400 mt-1">첫 로딩은 최대 35초 소요될 수 있습니다</p>
+            </div>
+        </div>
+
+        <!-- ─── 목록 뷰 오버레이 ─── -->
+        <div id="list-view">
+            <div class="list-header flex items-center justify-between">
+                <div>
+                    <p class="font-extrabold text-slate-800 text-base">매치 목록</p>
+                    <p id="list-subtitle" class="text-xs text-slate-400 font-medium mt-0.5"></p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <!-- 즐겨찾기 필터 버튼 -->
+                    <button id="fav-filter-btn"
+                            class="text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-200
+                                   text-slate-500 hover:border-amber-400 hover:text-amber-500 transition-colors">
+                        ☆ 즐겨찾기
+                    </button>
+                </div>
+            </div>
+            <div class="list-body" id="list-body">
+                <div class="empty-state">
+                    <p class="text-4xl mb-3">🗓️</p>
+                    <p class="font-bold text-slate-600 mb-1">데이터를 불러오는 중...</p>
+                    <p class="text-sm">먼저 지도에서 지역을 검색해 주세요.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── 사이드 패널 ─── -->
+        <div id="side-panel">
+            <!-- 패널 헤더 -->
+            <div class="px-5 py-4 border-b border-slate-100 bg-white flex-shrink-0">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="text-xs text-blue-500 font-bold mb-0.5">선택된 구장</p>
+                        <p id="panel-stadium" class="text-xl font-extrabold text-slate-800 leading-tight truncate"></p>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0 mt-0.5">
+                        <!-- 즐겨찾기 버튼 -->
+                        <button id="fav-btn" class="fav-btn fav-empty" title="즐겨찾기">☆</button>
+                        <!-- 닫기 버튼 -->
+                        <button id="close-panel-btn"
+                                class="text-slate-400 hover:text-slate-600 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 패널 콘텐츠 -->
+            <div id="match-list-scroll" class="flex-1 overflow-y-auto bg-slate-50 px-4 py-4">
+                <!-- 매치 리스트 동적 렌더링 -->
+                <div id="panel-match-list"></div>
+
+                <!-- 로딩 -->
+                <div id="panel-loading" class="empty-state hidden">
+                    <svg class="animate-spin h-8 w-8 mb-3 text-blue-500" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    <p>정보를 불러오는 중...</p>
+                </div>
+
+                <!-- 빈 상태 -->
+                <div id="panel-empty" class="empty-state">
+                    <p class="text-4xl mb-3">📍</p>
+                    <p class="font-bold text-slate-600 mb-1">구장을 선택해 주세요</p>
+                    <p class="text-sm">지도의 마커를 클릭하면 매치 정보가 표시됩니다.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ─── 토스트 컨테이너 ─── -->
+    <div id="toast-wrap"></div>
+
+    <script src="main.js"></script>
+</body>
+</html>

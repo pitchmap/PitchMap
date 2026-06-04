@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: futsal-moyeo
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter          # 무료 플랜: starter / 유료: standard
+    envVars:
+      - key: ENV
+        value: production
+      - key: KAKAO_APP_KEY
+        sync: false        # Render 대시보드에서 직접 입력
+      - key: ALLOWED_ORIGINS
+        sync: false        # 예: https://yourdomain.com
