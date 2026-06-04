@@ -9,7 +9,7 @@
     <script>
     window.__kakaoSDKReady = false;
     (function () {
-        const base = (document.documentElement.dataset.apiUrl || 'http://127.0.0.1:8000')
+        const base = (document.documentElement.dataset.apiUrl || window.location.origin)
                      .replace(/\/$/, '');
         fetch(base + '/api/config', { cache: 'no-store' })
             .then(function (r) { return r.json(); })

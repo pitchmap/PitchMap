@@ -6,8 +6,8 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // ── API 베이스 URL (배포 시 data-api-url 속성으로 주입 가능) ─
-    const API_BASE = document.documentElement.dataset.apiUrl?.replace(/\/$/, '')
-                     || 'http://127.0.0.1:8000';
+    const API_BASE = (document.documentElement.dataset.apiUrl || window.location.origin)
+                     .replace(/\/$/, '');
 
     // ── DOM 참조 ────────────────────────────────────────────────
     const welcomePage    = document.getElementById('welcome-page');

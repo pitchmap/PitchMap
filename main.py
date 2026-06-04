@@ -44,19 +44,32 @@ from starlette.responses import Response
 # 배포 시 환경 변수로 주입:
 #   ALLOWED_ORIGINS="https://yourdomain.com,https://www.yourdomain.com"
 #   ENV=production
-_ENV           = os.environ.get("ENV", "development")
-_EXTRA_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+_ENV     = os.environ.get("ENV", "development")
+_IS_PROD = _ENV == "production"
 
-_LOCAL_ORIGINS = [
-    "http://127.0.0.1:5500", "http://localhost:5500",
-    "http://127.0.0.1:8080", "http://localhost:8080",
-    "http://127.0.0.1:3000", "http://localhost:3000",
-    "null",  # file:// 직접 열기
+# 명시적으로 허용할 추가 오리진 (환경변수에서 읽음)
+# Render/Railway: ALLOWED_ORIGINS=https://pitchmap.onrender.com
+_EXTRA_ORIGINS = [
+    o.strip().rstrip("/")
+    for o in os.environ.get("ALLOWED_ORIGINS", "").split(",")
+    if o.strip()
 ]
 
-ALLOWED_ORIGINS = (_LOCAL_ORIGINS if _ENV != "production" else []) + _EXTRA_ORIGINS
+# FastAPI가 HTML까지 서빙하므로 브라우저 요청은 same-origin
+# → CORS는 외부 도메인 프론트엔드용 안전망으로만 유지
+_LOCAL_ORIGINS = [
+    "http://127.0.0.1:5500", "http://localhost:5500",
+    "http://127.0.0.1:8000", "http://localhost:8000",
+    "null",
+]
 
-_IS_PROD = _ENV == "production"
+ALLOWED_ORIGINS = ([] if _IS_PROD else _LOCAL_ORIGINS) + _EXTRA_ORIGINS
+
+# 환경변수 미설정 시 same-origin 요청은 CORS 헤더 없이도 통과하므로
+# origins 가 비었을 때만 임시 전체 허용 (배포 초기 디버깅용)
+if not ALLOWED_ORIGINS:
+    ALLOWED_ORIGINS = ["*"]
+
 app = FastAPI(
     docs_url=None if _IS_PROD else "/docs",
     redoc_url=None,
