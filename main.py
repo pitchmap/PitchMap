@@ -25,6 +25,12 @@ except ImportError:
     PLAYWRIGHT_AVAILABLE = False
     print("⚠️ playwright 미설치 → py -m playwright install chromium")
 
+# Render 무료 tier: Playwright 기본 비활성화 (메모리/CPU 부족)
+# 활성화하려면 환경변수 ENABLE_PLAYWRIGHT=true 설정
+if os.environ.get("ENV") == "production" and os.environ.get("ENABLE_PLAYWRIGHT", "false").lower() != "true":
+    PLAYWRIGHT_AVAILABLE = False
+    print("⚠️ [Production] Playwright 비활성화 → curl_cffi 전용")
+
 # ── curl_cffi: Chrome TLS 핑거프린팅 우회 (Playwright 불가 시 fallback) ──
 try:
     from curl_cffi.requests import AsyncSession as CurlSession
@@ -94,9 +100,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(SecurityHeadersMiddleware)
 
-# 30분 캐시: API 호출 빈도 최소화 (rate limit 방지)
-match_cache       = TTLCache(maxsize=64, ttl=1800)   # 30분
-match_cache_stale = TTLCache(maxsize=64, ttl=7200)   # 2시간 fallback
+# TTL 환경변수로 조정 가능 (Render 무료: 15분 fresh / 4시간 stale 권장)
+_FRESH_TTL = int(os.environ.get("CACHE_TTL",       900))   # 기본 15분
+_STALE_TTL = int(os.environ.get("CACHE_STALE_TTL", 14400)) # 기본 4시간
+
+match_cache       = TTLCache(maxsize=64, ttl=_FRESH_TTL)
+match_cache_stale = TTLCache(maxsize=64, ttl=_STALE_TTL)
+
+# 동시 크롤링 중복 방지용 lock set
+_crawl_in_progress: set[str] = set()
 
 # 간단한 IP별 rate limiter (분당 최대 20회)
 _rate_buckets: dict = defaultdict(list)
@@ -801,49 +813,21 @@ async def health_check():
     }
 
 
-@app.get("/api/matches")
-async def get_all_matches(
-    request: Request,
-    region: str = Query(default="서울", max_length=20),
-    days: int   = Query(default=14, ge=3, le=30),
-):
-    # Rate limit 체크
-    client_ip = request.client.host if request.client else "unknown"
-    if not _check_rate_limit(client_ip):
-        raise HTTPException(status_code=429, detail="Too many requests. Please wait a moment.")
-
-    # 지역값 화이트리스트 검증
-    if region not in REGION_MAPPING:
-        raise HTTPException(status_code=400, detail=f"지원하지 않는 지역: {region}")
-
-    asyncio.create_task(probe_urban_areas_once())
-    cache_key = f"matches_{region}_{days}"
-
-    if cache_key in match_cache:
-        print(f"Cache hit (fresh): {region} days={days}")
-        return {"status": "success", "data": match_cache[cache_key]}
-
+async def _do_crawl(region: str, days: int) -> list:
+    """실제 크롤링 수행 → 정렬된 매치 리스트 반환"""
     now        = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
-    all_matches: list = []
-
     region_ids = REGION_MAPPING[region]
     plab_id    = region_ids["plab"]
     urban_id   = region_ids["urban"]
+    all_matches: list = []
 
-    # ── Plab ────────────────────────────────────────────────────────
     plab_matches = await fetch_plab(plab_id, now, days)
     all_matches.extend(plab_matches)
-
     if not plab_matches:
-        if cache_key in match_cache_stale:
-            print(f"Cache hit (stale): {region} days={days}")
-            return {"status": "success", "data": match_cache_stale[cache_key]}
-        print(f"⚠️ [Plab] 0건 → 더미 데이터 삽입 ({region})")
         all_matches.extend(get_plab_dummy_matches(now, region))
 
-    # ── Urban: httpx로 days일치 병렬 호출 (semaphore 4) ─────────────
     target_dates = [now + datetime.timedelta(days=i) for i in range(days)]
-    headers = {
+    ua_headers   = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -852,33 +836,88 @@ async def get_all_matches(
     }
     urban_sem = asyncio.Semaphore(4)
 
-    async def fetch_urban_throttled(client, d):
+    async def _urban(client, d):
         async with urban_sem:
             return await fetch_urban_day(client, d, urban_id, now)
 
-    async with httpx.AsyncClient(headers=headers) as client:
-        urban_results = await asyncio.gather(
-            *[fetch_urban_throttled(client, d) for d in target_dates],
-            return_exceptions=True,
-        )
-    for r in urban_results:
-        if isinstance(r, Exception):
-            print(f"🚨 [Urban] {r}")
-        elif r:
-            all_matches.extend(r)
+    async with httpx.AsyncClient(headers=ua_headers) as client:
+        for r in await asyncio.gather(*[_urban(client, d) for d in target_dates],
+                                      return_exceptions=True):
+            if isinstance(r, list):
+                all_matches.extend(r)
 
     all_matches.extend(get_public_dummy_matches(now, region))
-
     all_matches.sort(key=lambda x: x["schedule"])
     for m in all_matches:
         del m["schedule"]
 
-    if not all_matches:
+    return all_matches
+
+
+async def _refresh_cache(cache_key: str, region: str, days: int) -> None:
+    """백그라운드 캐시 갱신 — 동일 key 중복 실행 방지"""
+    if cache_key in _crawl_in_progress:
+        return
+    _crawl_in_progress.add(cache_key)
+    try:
+        data = await _do_crawl(region, days)
+        if data:
+            match_cache[cache_key]       = data
+            match_cache_stale[cache_key] = data
+            print(f"✅ [BG Refresh] {cache_key} → {len(data)}건")
+    except Exception as e:
+        print(f"🚨 [BG Refresh Error] {cache_key}: {e}")
+    finally:
+        _crawl_in_progress.discard(cache_key)
+
+
+@app.get("/api/matches")
+async def get_all_matches(
+    request: Request,
+    region: str = Query(default="서울", max_length=20),
+    days: int   = Query(default=14, ge=3, le=30),
+):
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="Too many requests. Please wait a moment.")
+    if region not in REGION_MAPPING:
+        raise HTTPException(status_code=400, detail=f"지원하지 않는 지역: {region}")
+
+    asyncio.create_task(probe_urban_areas_once())
+    cache_key = f"matches_{region}_{days}"
+
+    # ① Fresh cache → 즉시 반환
+    if cache_key in match_cache:
+        print(f"[Cache] Fresh: {cache_key}")
+        return {"status": "success", "data": match_cache[cache_key]}
+
+    # ② Stale cache → 즉시 반환 + 백그라운드 갱신 (stale-while-revalidate)
+    if cache_key in match_cache_stale:
+        print(f"[Cache] Stale: {cache_key} → BG refresh 시작")
+        asyncio.create_task(_refresh_cache(cache_key, region, days))
+        return {"status": "success", "data": match_cache_stale[cache_key]}
+
+    # ③ 완전 미스 + 이미 크롤링 중 → 최대 45초 대기 후 캐시 확인
+    if cache_key in _crawl_in_progress:
+        for _ in range(45):
+            await asyncio.sleep(1)
+            if cache_key in match_cache:
+                return {"status": "success", "data": match_cache[cache_key]}
+        raise HTTPException(status_code=503, detail="크롤링 대기 중입니다. 잠시 후 다시 시도해 주세요.")
+
+    # ④ 완전 미스 → 직접 크롤링 (최초 1회)
+    _crawl_in_progress.add(cache_key)
+    try:
+        data = await _do_crawl(region, days)
+    finally:
+        _crawl_in_progress.discard(cache_key)
+
+    if not data:
         return {"status": "error", "message": f"'{region}' 지역 매치 없음"}
 
-    match_cache[cache_key]       = all_matches
-    match_cache_stale[cache_key] = all_matches
-    return {"status": "success", "data": all_matches}
+    match_cache[cache_key]       = data
+    match_cache_stale[cache_key] = data
+    return {"status": "success", "data": data}
 
 
 # ── 프론트엔드 서빙 ───────────────────────────────────────────

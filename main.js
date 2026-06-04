@@ -564,17 +564,62 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── 물리 마커 없이 지역 중심으로 처리할 웹 플랫폼 목록 ──────
     const WEB_PLATFORM_VENUES = new Set(['아이엠그라운드']);
 
+    // ── 모호한 구장명 → 카카오 검색 최적화 키워드 매핑 ──────────
+    // 형식: "데이터 원본 stadium_group명(또는 부분 포함 키워드)": "카카오 검색어"
+    // 부분 매칭: stadium.name.includes(key) 로 체크
+    const SPECIAL_VENUE_MAP = {
+        // 서울
+        '도봉 라온 풋살':        '라온풋살장 도봉',
+        '도봉 풋살장':           '도봉다목적체육공원 풋살',
+        '노원 풋살':             '노원구 공공 풋살장',
+        '마포 풋살':             '마포구 풋살장',
+        '강서 공공 풋살':        '강서공공스포츠클럽 풋살',
+        '목동 풋살':             '목동운동장 풋살',
+        '잠실종합운동장':        '잠실종합운동장 풋살',
+        '보라매공원':            '보라매공원 풋살',
+        '뚝섬한강공원':          '뚝섬한강공원 풋살',
+        '난지한강공원':          '난지한강공원 풋살',
+        // 부산
+        '구덕운동장':            '구덕운동장 풋살',
+        '스포원파크':            '스포원파크 풋살',
+        '화명생태공원':          '화명생태공원 풋살',
+        '삼락생태공원':          '삼락생태공원 풋살',
+        '대저생태공원':          '대저생태공원 풋살',
+        '황령산레포츠공원':      '황령산레포츠공원 풋살',
+        // 경기
+        '수원월드컵경기장':      '수원월드컵경기장 풋살',
+        '탄천종합운동장':        '탄천종합운동장 풋살',
+        // 인천
+        '인천아시아드':          '인천아시아드주경기장 풋살',
+        '송도풋살공원':          '송도풋살공원',
+    };
+
+    // stadium.name 에서 SPECIAL_VENUE_MAP 키가 포함되면 매핑된 검색어 반환
+    function _specialVenueKeyword(name) {
+        for (const [key, mapped] of Object.entries(SPECIAL_VENUE_MAP)) {
+            if (name.includes(key)) return mapped;
+        }
+        return null;
+    }
+
     // ── 검색 키워드용 이름 정제 ──────────────────────────────────
-    // Python의 clean_stadium_group_name으로 못 걸러진 나머지 패턴 제거
     function _sanitizeSearchName(raw) {
         return raw
-            .replace(/\s*[A-F]\s*구장\b/gi, '')       // A구장, B구장
-            .replace(/\s*\d+\s*구장\b/g, '')           // 1구장, 2구장
-            .replace(/\s+제\d+\s*(?:풋살|축구)?(?:경기장|구장)\b/g, '')  // 제1풋살경기장
-            .replace(/\s+(?:인조잔디|천연잔디|실내|실외)\b/g, '')
-            .replace(/\s+(?:풋살장|축구장|경기장|운동장|체육관)\s*$/g, '')
-            .replace(/\s+(?:대관|예약)\s*$/g, '')
-            .replace(/\s*\([^)]*\)/g, '')              // (괄호 내용)
+            // 구장 식별자
+            .replace(/\s*[A-Za-z]\s*구장\b/gi, '')          // A구장, B구장, a코트
+            .replace(/\s*[A-Za-z]\s*코트\b/gi, '')           // A코트
+            .replace(/\s*\d+\s*구장\b/g, '')                 // 1구장, 2구장
+            .replace(/\s*\d+\s*코트\b/g, '')                 // 1코트
+            .replace(/\s*\d+\s*호점\b/g, '')                 // 1호점
+            .replace(/\s*\d+\s*호\s*구장\b/g, '')            // 1호구장
+            .replace(/\s+제\d+\s*(?:풋살|축구)?(?:경기장|구장)\b/g, '')
+            // 시설 유형 접미사
+            .replace(/\s+(?:인조잔디|천연잔디)(?:구장|경기장)?\s*$/g, '')
+            .replace(/\s+(?:실내|실외|야외)\s*$/g, '')
+            .replace(/\s+(?:대관|예약|문의)\s*$/g, '')
+            // 괄호 및 특수문자
+            .replace(/\s*\([^)]*\)/g, '')
+            .replace(/\s*\[[^\]]*\]/g, '')
             .trim();
     }
 
@@ -599,7 +644,8 @@ document.addEventListener('DOMContentLoaded', () => {
             _isKorea(fLat, fLng) ? cb(new kakao.maps.LatLng(fLat, fLng)) : next();
         };
 
-        const cleanName = _sanitizeSearchName(stadium.name);
+        // SPECIAL_VENUE_MAP 우선 → 없으면 일반 정제
+        const cleanName = _specialVenueKeyword(stadium.name) ?? _sanitizeSearchName(stadium.name);
 
         // Tier-1: "지역 + 정제명" → 지역 주소 포함 결과 우선
         const q1 = region ? `${region} ${cleanName}` : cleanName;
