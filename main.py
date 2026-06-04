@@ -1,13 +1,20 @@
 import asyncio
-import httpx
 import datetime
+import os
 import re
+import time
+from collections import defaultdict
 from pathlib import Path
+
+import httpx
+import uvicorn
 from bs4 import BeautifulSoup
+from cachetools import TTLCache
 from fastapi import FastAPI, Query, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from cachetools import TTLCache
-import uvicorn
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request as StarletteRequest
+from starlette.responses import Response
 
 # .env 자동 로드 (python-dotenv 있을 때만)
 try:
@@ -38,13 +45,6 @@ try:
 except ImportError:
     CurlSession = None
     CURL_AVAILABLE = False
-
-import time
-import os
-from collections import defaultdict
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request as StarletteRequest
-from starlette.responses import Response
 
 # ── 환경 변수 기반 설정 ───────────────────────────────────────
 # 배포 시 환경 변수로 주입:
@@ -922,7 +922,6 @@ async def get_all_matches(
 
 # ── 프론트엔드 서빙 ───────────────────────────────────────────
 from fastapi.responses import HTMLResponse, FileResponse
-from pathlib import Path
 
 # .env에서 로드, 없으면 로컬 개발용 기본값
 _KAKAO_APP_KEY = os.environ.get("KAKAO_APP_KEY", "30d61422e38612b247c57f3942a111bd")
