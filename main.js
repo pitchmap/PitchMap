@@ -1529,6 +1529,7 @@ window.VenuePlatform = (function () {
         _user = data;
         localStorage.setItem('pm_user', JSON.stringify(data));
         closeLoginModal();
+        _syncTopbarBtn();
         _renderUserBar();
         await _loadTab(_activeTab);
     }
@@ -1536,6 +1537,7 @@ window.VenuePlatform = (function () {
     function _logout() {
         _user = null;
         localStorage.removeItem('pm_user');
+        _syncTopbarBtn();
         _renderUserBar();
         _loadTab(_activeTab);
     }
@@ -1881,12 +1883,45 @@ window.VenuePlatform = (function () {
         if (res.ok) await _tabReview($('vp-tab-body'));
     }
 
+    // ── 탑바 버튼 텍스트 동기화 ─────────────────────────────────
+    function _syncTopbarBtn() {
+        const btn   = $('pm-topbar-login-btn');
+        const label = $('pm-topbar-login-label');
+        if (!btn || !label) return;
+        if (_user) {
+            label.textContent = _user.nickname;
+            btn.style.color       = '#059669';
+            btn.style.borderColor = '#a7f3d0';
+            btn.style.background  = '#f0fdf4';
+            btn.onclick = () => {
+                if (confirm(`${_user.nickname}님, 로그아웃 할까요?`)) _logout();
+            };
+        } else {
+            label.textContent = '로그인';
+            btn.style.color       = '#2563eb';
+            btn.style.borderColor = '#bfdbfe';
+            btn.style.background  = '#eff6ff';
+            btn.onclick = openLoginModal;
+        }
+    }
+
     // ── 초기화 ──────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
         _loadSaved();
+        _syncTopbarBtn();
+
+        // 모달 배경 클릭 시 닫기
         $('pm-login-modal')?.addEventListener('click', e => {
             if (e.target === $('pm-login-modal')) closeLoginModal();
         });
+
+        // 첫 방문 & 미로그인 시 3초 후 로그인 유도
+        if (!_user && !localStorage.getItem('pm_login_prompted')) {
+            setTimeout(() => {
+                localStorage.setItem('pm_login_prompted', '1');
+                openLoginModal();
+            }, 3000);
+        }
     });
 
     return { load, openLoginModal, closeLoginModal, submitLogin,
