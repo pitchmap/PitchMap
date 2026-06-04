@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>풋살모여 — 전국 풋살 매치 통합 검색</title>
+    <title>PitchMap — 전국 풋살 매치 통합 검색</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -24,12 +24,12 @@
                     });
                 };
                 s.onerror = function () {
-                    console.error('[풋살모여] Kakao SDK 로드 실패 — 앱키를 확인하세요');
+                    console.error('[PitchMap] Kakao SDK 로드 실패 — 앱키를 확인하세요');
                 };
                 document.head.appendChild(s);
             })
             .catch(function () {
-                console.error('[풋살모여] /api/config 실패 — 서버가 실행 중인지 확인하세요');
+                console.error('[PitchMap] /api/config 실패 — 서버가 실행 중인지 확인하세요');
             });
     })();
     </script>
@@ -302,7 +302,7 @@
             <!-- 브랜딩 -->
             <div class="fade-up fade-up-1 mb-6">
                 <div class="text-6xl mb-3 filter drop-shadow-lg">⚽</div>
-                <h1 class="text-4xl font-black text-white tracking-tight mb-2">풋살모여</h1>
+                <h1 class="text-4xl font-black text-white tracking-tight mb-2">PitchMap</h1>
                 <p class="text-slate-400 font-medium text-sm">
                     전국 풋살 소셜매치 · 공공구장 통합 검색
                 </p>
