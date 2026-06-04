@@ -1119,6 +1119,129 @@ async def jt_create(b: _TeamIn):
     return {"status": "success", "data": doc}
 
 
+# ═══════════════════════════════════════════════════════════════════
+# 🏟️  구장 매칭판 — 로그인 · 팀매칭 · 용병모집 · 리뷰 (venue 기반)
+# ═══════════════════════════════════════════════════════════════════
+
+_VP_SESSIONS: dict[str, dict] = {}   # token → user
+_VP_MATCHES:  dict[str, list] = {}   # venue_id → [team_match]
+_VP_RECRUIT:  dict[str, list] = {}   # venue_id → [recruit]
+_VP_REVIEWS:  dict[str, list] = {}   # venue_id → [review]
+_VP_REC_LOCK = _JochukLock()
+
+
+def _vp_user(token: str) -> dict:
+    u = _VP_SESSIONS.get(token)
+    if not u: raise HTTPException(401, "로그인이 필요합니다")
+    return u
+
+
+class _VPLoginIn(_JModel):
+    nickname: str
+    region:   str
+    position: str = "올포지션"
+
+class _VPMatchIn(_JModel):
+    token:       str
+    match_date:  str
+    size:        str = "5vs5"
+    skill_level: str = "중급"
+    fee_policy:  str = "50_50"
+    contact_url: str
+    memo:        str = ""
+
+class _VPRecruitIn(_JModel):
+    token:           str
+    match_date:      str
+    max_players:     int = 10
+    fee_per_person:  int = 0
+    size:            str = "5vs5"
+    contact_url:     str
+    memo:            str = ""
+
+class _VPJoinIn(_JModel):
+    token: str
+
+class _VPReviewIn(_JModel):
+    token:   str
+    turf:    str   # 상|중|하
+    manner:  str   # 상|중|하
+    comment: str
+
+
+# ── 로그인 ──────────────────────────────────────────────────────
+@app.post("/api/auth/login")
+async def vp_login(b: _VPLoginIn):
+    token = _jid()
+    user  = {"token": token, "nickname": b.nickname,
+              "region": b.region, "position": b.position}
+    _VP_SESSIONS[token] = user
+    return {"status": "success", "data": user}
+
+@app.get("/api/auth/me")
+async def vp_me(token: str):
+    return {"status": "success", "data": _vp_user(token)}
+
+
+# ── 구장별 팀 매칭 ───────────────────────────────────────────────
+@app.get("/api/venue/{vid}/matches")
+async def vp_matches_list(vid: str):
+    return {"status": "success", "data": _VP_MATCHES.get(vid, [])}
+
+@app.post("/api/venue/{vid}/matches")
+async def vp_matches_create(vid: str, b: _VPMatchIn):
+    u   = _vp_user(b.token)
+    doc = {**b.dict(), "id": _jid(), "created_by": u["nickname"],
+           "status": "open", "created_at": _jnow()}
+    _VP_MATCHES.setdefault(vid, []).append(doc)
+    return {"status": "success", "data": doc}
+
+
+# ── 구장별 용병 모집 ─────────────────────────────────────────────
+@app.get("/api/venue/{vid}/recruit")
+async def vp_recruit_list(vid: str):
+    out = [r for r in _VP_RECRUIT.get(vid, [])
+           if r["current_players"] < r["max_players"]]
+    return {"status": "success", "data": out}
+
+@app.post("/api/venue/{vid}/recruit")
+async def vp_recruit_create(vid: str, b: _VPRecruitIn):
+    u   = _vp_user(b.token)
+    doc = {**b.dict(), "id": _jid(), "created_by": u["nickname"],
+           "current_players": 1, "participants": [u["nickname"]],
+           "created_at": _jnow()}
+    _VP_RECRUIT.setdefault(vid, []).append(doc)
+    return {"status": "success", "data": doc}
+
+@app.post("/api/venue/{vid}/recruit/{rid}/join")
+async def vp_recruit_join(vid: str, rid: str, b: _VPJoinIn):
+    async with _VP_REC_LOCK:
+        u = _vp_user(b.token)
+        posts = _VP_RECRUIT.get(vid, [])
+        post  = next((p for p in posts if p["id"] == rid), None)
+        if not post: raise HTTPException(404, "모집글 없음")
+        if post["current_players"] >= post["max_players"]: raise HTTPException(400, "인원 마감")
+        if u["nickname"] in post["participants"]:           raise HTTPException(400, "이미 참가")
+        post["current_players"] += 1
+        post["participants"].append(u["nickname"])
+        return {"status": "success", "data": {"current_players": post["current_players"]}}
+
+
+# ── 구장별 리뷰 ──────────────────────────────────────────────────
+@app.get("/api/venue/{vid}/reviews")
+async def vp_reviews_list(vid: str):
+    return {"status": "success", "data": _VP_REVIEWS.get(vid, [])}
+
+@app.post("/api/venue/{vid}/reviews")
+async def vp_reviews_create(vid: str, b: _VPReviewIn):
+    u   = _vp_user(b.token)
+    doc = {"id": _jid(), "nickname": u["nickname"], "region": u["region"],
+           "turf": b.turf, "manner": b.manner, "comment": b.comment,
+           "created_at": _jnow()}
+    _VP_REVIEWS.setdefault(vid, []).append(doc)
+    return {"status": "success", "data": doc}
+
+
 if __name__ == "__main__":
     is_prod = os.environ.get("ENV") == "production"
     host    = "0.0.0.0" if is_prod else "127.0.0.1"

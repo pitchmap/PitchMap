@@ -774,6 +774,8 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshFavBtn(stadiumData.name);
         renderMatchList(stadiumData);
         openPanel();
+        // 구장 매칭판 로드 (VenuePlatform 모듈이 준비된 경우)
+        if (window.VenuePlatform) window.VenuePlatform.load(stadiumData.name);
     }
 
     // ── 날짜 세그먼트를 container(Element)에 렌더링 ──────────
@@ -1488,4 +1490,406 @@ window.JochukPlatform = (function () {
     return { loadExchange, submitExchange, loadRecruit, submitRecruit, joinRecruit,
              loadTeams, submitTeam, toggleForm, openPanel, closePanel };
 
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// 🏟️  VenuePlatform — 구장 매칭판 (로그인·팀매칭·용병·리뷰)
+// ═══════════════════════════════════════════════════════════════
+window.VenuePlatform = (function () {
+    'use strict';
+
+    const _base = () =>
+        (document.documentElement.dataset.apiUrl || window.location.origin).replace(/\/$/, '');
+    const $  = id  => document.getElementById(id);
+    const v  = id  => ($(`${id}`)?.value ?? '').trim();
+    const FEE = { '50_50':'반반', 'host_pays':'홈팀 부담', 'loser_pays':'패팀 부담' };
+
+    let _user      = null;
+    let _venueId   = null;
+    let _activeTab = 'match';
+
+    // ── 로그인 ──────────────────────────────────────────────────
+    function _loadSaved() {
+        const raw = localStorage.getItem('pm_user');
+        if (raw) _user = JSON.parse(raw);
+    }
+
+    function openLoginModal()  { const m=$('pm-login-modal'); if(m) m.style.display='flex'; }
+    function closeLoginModal() { const m=$('pm-login-modal'); if(m) m.style.display='none'; }
+
+    async function submitLogin() {
+        const nick = v('pm-login-nick'), region = v('pm-login-region'),
+              pos  = v('pm-login-pos');
+        if (!nick || !region) return alert('닉네임과 지역을 입력하세요');
+        const res  = await fetch(`${_base()}/api/auth/login`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ nickname: nick, region, position: pos })
+        });
+        const { data } = await res.json();
+        _user = data;
+        localStorage.setItem('pm_user', JSON.stringify(data));
+        closeLoginModal();
+        _renderUserBar();
+        await _loadTab(_activeTab);
+    }
+
+    function _logout() {
+        _user = null;
+        localStorage.removeItem('pm_user');
+        _renderUserBar();
+        _loadTab(_activeTab);
+    }
+
+    // ── 구장 섹션 주입 ───────────────────────────────────────────
+    function load(venueName) {
+        _loadSaved();
+        _venueId   = encodeURIComponent(venueName.trim());
+        _activeTab = 'match';
+        $('vp-section')?.remove();
+
+        const scroll = $('match-list-scroll');
+        if (!scroll) return;
+
+        const sec = document.createElement('div');
+        sec.id = 'vp-section';
+        sec.innerHTML = `
+          <div style="border-top:2px dashed #e2e8f0;padding:14px 0 4px;">
+            <p style="font-weight:900;font-size:14px;color:#1e293b;margin-bottom:10px;padding:0 14px;">
+              🏟️ 이 구장에서 매칭하기
+            </p>
+            <div id="vp-user-bar" style="padding:0 14px 10px;"></div>
+            <div style="display:flex;border-bottom:2px solid #e2e8f0;padding:0 14px;">
+              ${['match','recruit','review'].map((t,i) => `
+                <button class="vp-tbtn" data-vt="${t}"
+                  style="flex:1;padding:9px 4px;font-size:12px;font-weight:700;border:none;
+                         background:none;cursor:pointer;
+                         color:${i===0?'#2563eb':'#64748b'};
+                         border-bottom:${i===0?'2.5px solid #2563eb':'2.5px solid transparent'};
+                         margin-bottom:-2px;">
+                  ${ {match:'팀 매칭',recruit:'용병 모집',review:'리뷰'}[t] }
+                </button>`).join('')}
+            </div>
+            <div id="vp-tab-body" style="padding:12px 14px;"></div>
+          </div>`;
+        scroll.appendChild(sec);
+
+        sec.querySelectorAll('.vp-tbtn').forEach(btn =>
+            btn.addEventListener('click', () => _switchTab(btn.dataset.vt))
+        );
+        _renderUserBar();
+        _loadTab('match');
+    }
+
+    function _renderUserBar() {
+        const el = $('vp-user-bar'); if (!el) return;
+        el.innerHTML = _user
+            ? `<div style="display:flex;align-items:center;justify-content:space-between;
+                           background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:8px 12px;">
+                 <div style="display:flex;align-items:center;gap:6px;">
+                   <span style="font-size:11px;background:#2563eb;color:#fff;
+                                padding:2px 8px;border-radius:99px;font-weight:800;">
+                     ${_user.position}
+                   </span>
+                   <span style="font-size:13px;font-weight:800;">${_user.nickname}</span>
+                   <span style="font-size:11px;color:#64748b;">${_user.region}</span>
+                 </div>
+                 <button onclick="VenuePlatform._logout()"
+                   style="font-size:11px;color:#94a3b8;border:none;background:none;cursor:pointer;">
+                   로그아웃
+                 </button>
+               </div>`
+            : `<button onclick="VenuePlatform.openLoginModal()"
+                 style="width:100%;padding:10px;background:#2563eb;color:#fff;border:none;
+                        border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;">
+                 간편 로그인 후 매칭 참여하기
+               </button>`;
+    }
+
+    function _switchTab(tab) {
+        _activeTab = tab;
+        $('vp-section')?.querySelectorAll('.vp-tbtn').forEach(btn => {
+            const on = btn.dataset.vt === tab;
+            btn.style.color = on ? '#2563eb' : '#64748b';
+            btn.style.borderBottom = on ? '2.5px solid #2563eb' : '2.5px solid transparent';
+        });
+        _loadTab(tab);
+    }
+
+    async function _loadTab(tab) {
+        const el = $('vp-tab-body'); if (!el || !_venueId) return;
+        if (tab === 'match')   await _tabMatch(el);
+        if (tab === 'recruit') await _tabRecruit(el);
+        if (tab === 'review')  await _tabReview(el);
+    }
+
+    // 공통 카드 헬퍼
+    const _card  = html => `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;
+                                        padding:12px;margin-bottom:8px;">${html}</div>`;
+    const _badge = (txt,bg,c) => `<span style="font-size:10px;padding:2px 8px;border-radius:99px;
+                                               font-weight:800;background:${bg};color:${c};">${txt}</span>`;
+    const _fmt   = iso => { try { return new Date(iso).toLocaleString('ko-KR',
+        {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}); } catch { return iso; } };
+    const _loginBtn = (label,bg) =>
+        `<button onclick="VenuePlatform.openLoginModal()"
+           style="width:100%;padding:9px;background:${bg};color:#fff;border:none;
+                  border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;
+                  margin-bottom:12px;">${label}</button>`;
+    const _empty = txt => `<p style="text-align:center;color:#94a3b8;font-size:13px;
+                                      padding:16px 0;">${txt}</p>`;
+
+    // ── 팀 매칭 탭 ──────────────────────────────────────────────
+    async function _tabMatch(el) {
+        const { data } = await (await fetch(`${_base()}/api/venue/${_venueId}/matches`)).json();
+
+        const form = _user ? `
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;
+                      padding:12px;margin-bottom:12px;display:flex;flex-direction:column;gap:6px;">
+            <p style="font-size:12px;font-weight:800;color:#475569;">팀 매칭 신청</p>
+            <input class="ji" id="vp-m-date" type="datetime-local">
+            <div style="display:flex;gap:6px;">
+              <select class="ji" id="vp-m-size" style="flex:1;">
+                <option>5vs5</option><option>6vs6</option><option>7vs7</option><option>풀코트</option>
+              </select>
+              <select class="ji" id="vp-m-skill" style="flex:1;">
+                <option>중급</option><option>입문</option><option>초급</option><option>고급</option>
+              </select>
+            </div>
+            <select class="ji" id="vp-m-fee">
+              <option value="50_50">구장비 반반</option>
+              <option value="host_pays">홈팀 부담</option>
+              <option value="loser_pays">패팀 부담</option>
+            </select>
+            <input class="ji" id="vp-m-url" placeholder="연락처 URL *">
+            <input class="ji" id="vp-m-memo" placeholder="한마디 (선택)">
+            <button onclick="VenuePlatform._submitMatch()"
+              style="padding:9px;background:#059669;color:#fff;border:none;
+                     border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
+              팀 매칭 등록
+            </button>
+          </div>` : _loginBtn('로그인 후 팀 매칭 신청하기', '#059669');
+
+        const list = !data.length ? _empty('등록된 팀 매칭이 없습니다') :
+            data.map(m => _card(`
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                <span style="font-weight:800;font-size:13px;">${m.created_by}</span>
+                ${_badge(m.size,'#dcfce7','#15803d')}
+              </div>
+              <p style="font-size:11px;color:#94a3b8;margin-bottom:4px;">
+                ${_fmt(m.match_date)} · ${m.skill_level} · ${FEE[m.fee_policy]||m.fee_policy}
+              </p>
+              ${m.memo?`<p style="font-size:12px;color:#475569;margin-bottom:6px;">${m.memo}</p>`:''}
+              ${m.status==='open'&&m.contact_url?`<a href="${m.contact_url}" target="_blank" rel="noopener"
+                style="font-size:12px;color:#059669;font-weight:700;text-decoration:underline;">
+                연락하기 →</a>`:''}`)).join('');
+
+        el.innerHTML = form + list;
+    }
+
+    async function _submitMatch() {
+        if (!_user) return openLoginModal();
+        const body = { token: _user.token, match_date: v('vp-m-date'),
+                       size: v('vp-m-size'), skill_level: v('vp-m-skill'),
+                       fee_policy: v('vp-m-fee'), contact_url: v('vp-m-url'),
+                       memo: v('vp-m-memo') };
+        if (!body.match_date || !body.contact_url) return alert('날짜와 연락처 URL을 입력하세요');
+        const res = await fetch(`${_base()}/api/venue/${_venueId}/matches`,
+            { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        if (res.ok) await _tabMatch($('vp-tab-body'));
+    }
+
+    // ── 용병 모집 탭 ────────────────────────────────────────────
+    async function _tabRecruit(el) {
+        const { data } = await (await fetch(`${_base()}/api/venue/${_venueId}/recruit`)).json();
+
+        const form = _user ? `
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;
+                      padding:12px;margin-bottom:12px;display:flex;flex-direction:column;gap:6px;">
+            <p style="font-size:12px;font-weight:800;color:#475569;">용병 모집 등록</p>
+            <input class="ji" id="vp-rc-date" type="datetime-local">
+            <div style="display:flex;gap:6px;">
+              <input class="ji" id="vp-rc-max" type="number" placeholder="목표 인원" value="10" style="flex:1;">
+              <input class="ji" id="vp-rc-fee" type="number" placeholder="1인 참가비(원)" value="0" style="flex:1;">
+            </div>
+            <select class="ji" id="vp-rc-size">
+              <option>5vs5</option><option>6vs6</option><option>7vs7</option><option>풀코트</option>
+            </select>
+            <input class="ji" id="vp-rc-url" placeholder="연락처 URL *">
+            <input class="ji" id="vp-rc-memo" placeholder="한마디 (선택)">
+            <button onclick="VenuePlatform._submitRecruit()"
+              style="padding:9px;background:#7c3aed;color:#fff;border:none;
+                     border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
+              용병 모집 등록
+            </button>
+          </div>` : _loginBtn('로그인 후 용병 모집 등록하기', '#7c3aed');
+
+        const list = !data.length ? _empty('모집 중인 용병 공고가 없습니다') :
+            data.map(m => {
+                const pct = Math.round(m.current_players / m.max_players * 100);
+                const joinBtn = _user
+                    ? `<button onclick="VenuePlatform._joinRecruit('${m.id}')"
+                         style="width:100%;padding:7px;background:#7c3aed;color:#fff;border:none;
+                                border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">
+                         참가 신청</button>`
+                    : `<button onclick="VenuePlatform.openLoginModal()"
+                         style="width:100%;padding:7px;background:#e2e8f0;color:#64748b;border:none;
+                                border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">
+                         로그인 후 참가 신청</button>`;
+                return _card(`
+                  <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                    <span style="font-weight:800;font-size:13px;">${m.created_by}</span>
+                    ${_badge(m.size,'#ede9fe','#6d28d9')}
+                  </div>
+                  <p style="font-size:11px;color:#94a3b8;margin-bottom:6px;">
+                    ${_fmt(m.match_date)}${m.fee_per_person>0?` · ${m.fee_per_person.toLocaleString()}원/인`:''}
+                  </p>
+                  <div style="margin-bottom:8px;">
+                    <div style="display:flex;justify-content:space-between;font-size:11px;
+                                color:#94a3b8;margin-bottom:3px;">
+                      <span>참가 인원</span><span>${m.current_players}/${m.max_players}명</span>
+                    </div>
+                    <div style="height:5px;background:#f1f5f9;border-radius:99px;overflow:hidden;">
+                      <div style="height:100%;width:${pct}%;background:#7c3aed;border-radius:99px;"></div>
+                    </div>
+                  </div>
+                  ${joinBtn}`);
+            }).join('');
+
+        el.innerHTML = form + list;
+    }
+
+    async function _submitRecruit() {
+        if (!_user) return openLoginModal();
+        const body = { token: _user.token, match_date: v('vp-rc-date'),
+                       max_players: parseInt(v('vp-rc-max'))||10,
+                       fee_per_person: parseInt(v('vp-rc-fee'))||0,
+                       size: v('vp-rc-size'), contact_url: v('vp-rc-url'),
+                       memo: v('vp-rc-memo') };
+        if (!body.match_date || !body.contact_url) return alert('날짜와 연락처 URL을 입력하세요');
+        const res = await fetch(`${_base()}/api/venue/${_venueId}/recruit`,
+            { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        if (res.ok) await _tabRecruit($('vp-tab-body'));
+    }
+
+    async function _joinRecruit(rid) {
+        if (!_user) return openLoginModal();
+        const res = await fetch(`${_base()}/api/venue/${_venueId}/recruit/${rid}/join`,
+            { method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ token: _user.token }) });
+        const json = await res.json();
+        if (!res.ok) return alert(json.detail || '오류');
+        await _tabRecruit($('vp-tab-body'));
+    }
+
+    // ── 리뷰 탭 ─────────────────────────────────────────────────
+    const _TURF_STAR   = { '상':'🟢 좋음', '중':'🟡 보통', '하':'🔴 나쁨' };
+    const _MANNER_ICON = { '상':'😊 매너 좋음', '중':'😐 보통', '하':'😞 아쉬움' };
+
+    async function _tabReview(el) {
+        const { data } = await (await fetch(`${_base()}/api/venue/${_venueId}/reviews`)).json();
+
+        const stats = data.length ? (() => {
+            const cnt = g => data.filter(r => r[g[0]] === g[1]).length;
+            const best = v => ['상','중','하'].sort((a,b) => cnt([v,b])-cnt([v,a]))[0];
+            return `<div style="display:flex;gap:6px;margin-bottom:10px;">
+              <div style="flex:1;background:#fefce8;border:1px solid #fde68a;border-radius:10px;
+                          padding:8px;text-align:center;">
+                <p style="font-size:10px;font-weight:700;color:#92400e;">잔디</p>
+                <p style="font-size:13px;font-weight:800;">${_TURF_STAR[best('turf')]||'-'}</p>
+              </div>
+              <div style="flex:1;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;
+                          padding:8px;text-align:center;">
+                <p style="font-size:10px;font-weight:700;color:#075985;">매너</p>
+                <p style="font-size:13px;font-weight:800;">${_MANNER_ICON[best('manner')]||'-'}</p>
+              </div>
+              <div style="flex:1;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;
+                          padding:8px;text-align:center;">
+                <p style="font-size:10px;font-weight:700;color:#15803d;">리뷰 수</p>
+                <p style="font-size:18px;font-weight:900;color:#15803d;">${data.length}</p>
+              </div>
+            </div>`;
+        })() : '';
+
+        const selRow = (name, label, opts) => `
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+            <span style="font-size:12px;color:#64748b;width:40px;flex-shrink:0;">${label}</span>
+            ${opts.map(o => `
+              <label style="flex:1;cursor:pointer;text-align:center;">
+                <input type="radio" name="vp-rv-${name}" value="${o}"
+                       style="display:none;" onchange="VenuePlatform._onRadio(this)">
+                <span class="vp-rv-opt" style="display:block;padding:5px 2px;
+                     border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;
+                     font-weight:700;user-select:none;">${o}</span>
+              </label>`).join('')}
+          </div>`;
+
+        const form = _user ? `
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;
+                      padding:12px;margin-bottom:12px;">
+            <p style="font-size:12px;font-weight:800;color:#475569;margin-bottom:8px;">리뷰 남기기</p>
+            ${selRow('turf','잔디',['상','중','하'])}
+            ${selRow('manner','매너',['상','중','하'])}
+            <input class="ji" id="vp-rv-comment" placeholder="한줄 리뷰 *" style="margin:4px 0 8px;">
+            <button onclick="VenuePlatform._submitReview()"
+              style="width:100%;padding:9px;background:#f59e0b;color:#fff;border:none;
+                     border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
+              리뷰 등록
+            </button>
+          </div>` : _loginBtn('로그인 후 리뷰 남기기', '#f59e0b');
+
+        const list = !data.length ? _empty('첫 번째 리뷰를 남겨보세요!') :
+            data.map(r => _card(`
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-weight:800;font-size:13px;">${r.nickname}</span>
+                <span style="font-size:10px;color:#94a3b8;">${r.region}</span>
+              </div>
+              <div style="display:flex;gap:5px;margin-bottom:6px;">
+                ${_badge(_TURF_STAR[r.turf],'#fef9c3','#92400e')}
+                ${_badge(_MANNER_ICON[r.manner],'#e0f2fe','#075985')}
+              </div>
+              <p style="font-size:13px;color:#334155;">${r.comment}</p>`)).join('');
+
+        el.innerHTML = form + stats + list;
+    }
+
+    // 라디오 버튼 선택 시각화 (전역 노출 필요)
+    function _onRadio(radio) {
+        const sec = $('vp-section');
+        if (!sec) return;
+        sec.querySelectorAll(`input[name="${radio.name}"]`).forEach(r => {
+            if (r.nextElementSibling) {
+                r.nextElementSibling.style.borderColor = '#e2e8f0';
+                r.nextElementSibling.style.background  = '#fff';
+                r.nextElementSibling.style.color       = '#1e293b';
+            }
+        });
+        if (radio.nextElementSibling) {
+            radio.nextElementSibling.style.borderColor = '#f59e0b';
+            radio.nextElementSibling.style.background  = '#fef3c7';
+            radio.nextElementSibling.style.color       = '#92400e';
+        }
+    }
+
+    async function _submitReview() {
+        if (!_user) return openLoginModal();
+        const get = name => $('vp-section')?.querySelector(`input[name="${name}"]:checked`)?.value;
+        const turf = get('vp-rv-turf'), manner = get('vp-rv-manner'), comment = v('vp-rv-comment');
+        if (!turf || !manner || !comment) return alert('잔디·매너·한줄평을 모두 입력하세요');
+        const res = await fetch(`${_base()}/api/venue/${_venueId}/reviews`, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ token: _user.token, turf, manner, comment })
+        });
+        if (res.ok) await _tabReview($('vp-tab-body'));
+    }
+
+    // ── 초기화 ──────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        _loadSaved();
+        $('pm-login-modal')?.addEventListener('click', e => {
+            if (e.target === $('pm-login-modal')) closeLoginModal();
+        });
+    });
+
+    return { load, openLoginModal, closeLoginModal, submitLogin,
+             _logout, _submitMatch, _submitRecruit, _joinRecruit,
+             _submitReview, _onRadio };
 })();

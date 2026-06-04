@@ -591,6 +591,41 @@
     <!-- ─── 토스트 컨테이너 ─── -->
     <div id="toast-wrap"></div>
 
+    <!-- ── 간편 로그인 모달 ──────────────────────────────── -->
+    <div id="pm-login-modal"
+         style="display:none;position:fixed;inset:0;z-index:200;
+                background:rgba(15,23,42,0.55);align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:20px;padding:28px 24px;
+                    width:320px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+            <p style="font-weight:900;font-size:20px;color:#1e293b;
+                       letter-spacing:-0.5px;margin-bottom:4px;">⚽ PitchMap</p>
+            <p style="font-size:13px;color:#64748b;margin-bottom:20px;">
+                닉네임만 입력하면 바로 시작!</p>
+            <input id="pm-login-nick" class="ji" placeholder="닉네임 *"
+                   style="margin-bottom:8px;">
+            <select id="pm-login-region" class="ji" style="margin-bottom:8px;">
+                <option value="">활동 지역 *</option>
+                <option>서울</option><option>부산</option><option>인천</option>
+                <option>경기</option><option>대구</option><option>광주</option>
+            </select>
+            <select id="pm-login-pos" class="ji" style="margin-bottom:20px;">
+                <option>올포지션</option><option>GK</option><option>DF</option>
+                <option>MF</option><option>FW</option>
+            </select>
+            <button onclick="VenuePlatform.submitLogin()"
+                style="width:100%;padding:13px;background:#2563eb;color:#fff;
+                       border:none;border-radius:12px;font-weight:800;
+                       font-size:14px;cursor:pointer;margin-bottom:8px;">
+                시작하기
+            </button>
+            <button onclick="VenuePlatform.closeLoginModal()"
+                style="width:100%;padding:10px;background:none;border:none;
+                       color:#94a3b8;font-size:13px;cursor:pointer;">
+                닫기
+            </button>
+        </div>
+    </div>
+
     <!-- ═══════════════════════════════════════════════════════════
          ⚽ 조축 매칭판 — 기존 DOM과 완전 독립 (id 접두사: jochuk-)
          ══════════════════════════════════════════════════════════ -->
