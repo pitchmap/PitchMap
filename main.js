@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let loadedRegions  = new Set();
     let mapInitialized = false;
     let currentDateFilter = 'ALL';
+    let currentPlatformFilter = 'ALL';
     let currentPanelStadium = null;
     let isListView = false;
     let showFavOnly = false;
@@ -183,14 +184,100 @@ document.addEventListener('DOMContentLoaded', () => {
 
     viewToggleBtn.addEventListener('click', () => setListView(!isListView));
 
-    // 플랫폼 필터: 클라이언트 측 즉시 반영
+    // 플랫폼 필터: 클라이언트 측 즉시 반영 (숨겨진 select 동기)
     document.getElementById('platform-filter')?.addEventListener('change', () => {
+        currentPlatformFilter = document.getElementById('platform-filter').value;
+        // 좌측 패널 토글 동기
+        _syncLeftPanelPlatformBtns(currentPlatformFilter);
         applyFilters();
         if (isListView) renderListView();
     });
-    // 날짜 기간 필터: 새 API 요청 필요
+    // 날짜 기간 필터: 새 API 요청 필요 (숨겨진 select 동기)
     document.getElementById('days-filter')?.addEventListener('change', () => {
         if (mapInitialized) fetchMatchData();
+    });
+
+    // ── 좌측 패널 컨트롤 연결 ────────────────────────────
+    const leftPanel = document.getElementById('left-panel');
+    const leftPanelToggle = document.getElementById('left-panel-toggle');
+    const leftPanelCloseBtn = document.getElementById('left-panel-close-btn');
+    const lpRegionSelect = document.getElementById('lp-region-select');
+    const lpDaysSelect = document.getElementById('lp-days-select');
+    const lpStadiumSearch = document.getElementById('lp-stadium-search');
+
+    // 모바일 토글
+    if (leftPanelToggle) {
+        leftPanelToggle.addEventListener('click', () => {
+            leftPanel?.classList.toggle('open');
+        });
+    }
+    if (leftPanelCloseBtn) {
+        leftPanelCloseBtn.addEventListener('click', () => {
+            leftPanel?.classList.remove('open');
+        });
+    }
+    // 미디어 쿼리로 모바일에서만 토글 버튼/닫기 버튼 표시
+    function _checkLeftPanelResponsive() {
+        const isMobile = window.innerWidth < 768;
+        if (leftPanelToggle) leftPanelToggle.style.display = isMobile ? 'flex' : 'none';
+        if (leftPanelCloseBtn) leftPanelCloseBtn.classList.toggle('hidden', !isMobile);
+        // 데스크톱에서는 항상 열림
+        if (!isMobile && leftPanel) leftPanel.classList.add('open');
+        // 데스크톱에서 레전드 숨기기 (좌측패널 내장)
+        const legendMobile = document.getElementById('legend-box-mobile');
+        if (legendMobile) legendMobile.style.display = isMobile ? '' : 'none';
+    }
+    _checkLeftPanelResponsive();
+    window.addEventListener('resize', _checkLeftPanelResponsive);
+
+    // 좌측 패널: 지역 변경
+    if (lpRegionSelect) {
+        lpRegionSelect.addEventListener('change', () => {
+            const r = lpRegionSelect.value;
+            document.getElementById('region-filter').value = r;
+            setRegionTag(r);
+            if (mapInitialized) fetchMatchData();
+        });
+    }
+
+    // 좌측 패널: 날짜 기한 변경
+    if (lpDaysSelect) {
+        lpDaysSelect.addEventListener('change', () => {
+            document.getElementById('days-filter').value = lpDaysSelect.value;
+            if (mapInitialized) fetchMatchData();
+        });
+    }
+
+    // 좌측 패널: 플랫폼 토글 버튼
+    document.querySelectorAll('.platform-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const pf = btn.dataset.pf;
+            currentPlatformFilter = pf;
+            document.getElementById('platform-filter').value = pf;
+            // 토글 UI 업데이트
+            _syncLeftPanelPlatformBtns(pf);
+            applyFilters();
+            if (isListView) renderListView();
+        });
+    });
+
+    function _syncLeftPanelPlatformBtns(pf) {
+        document.querySelectorAll('.platform-toggle-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.pf === pf);
+        });
+    }
+
+    // 좌측 패널: 구장 검색 동기
+    if (lpStadiumSearch) {
+        lpStadiumSearch.addEventListener('input', () => {
+            stadiumSearch.value = lpStadiumSearch.value;
+            applyFilters();
+        });
+    }
+    // 상단 검색 → 좌측 패널 동기 + 필터 적용
+    stadiumSearch.addEventListener('input', () => {
+        if (lpStadiumSearch) lpStadiumSearch.value = stadiumSearch.value;
+        applyFilters();
     });
 
     // ── 통계 ──────────────────────────────────────────────────
@@ -279,13 +366,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isListView) renderListView();
     });
 
-    // 날짜 필터 + 검색어 필터 동시 적용
+    // 날짜 필터 + 플랫폼 필터 + 검색어 필터 동시 적용 (동적 마커 필터링)
     function applyFilters() {
         const q = stadiumSearch.value.trim().toLowerCase();
+        const pf = currentPlatformFilter;
         markers.forEach(({ overlay, dates, stadiumData }) => {
             const dateOk = currentDateFilter === 'ALL' || dates.has(currentDateFilter);
             const searchOk = !q || stadiumData.name.toLowerCase().includes(q);
-            overlay.setMap(dateOk && searchOk ? map : null);
+            // 플랫폼 필터: 해당 구장의 매치 중 선택된 플랫폼이 1건이라도 있으면 표시
+            const platformOk = pf === 'ALL' || stadiumData.matches.some(m => m.platform === pf);
+            const visible = dateOk && searchOk && platformOk;
+            overlay.setMap(visible ? map : null);
         });
     }
 
@@ -298,6 +389,8 @@ document.addEventListener('DOMContentLoaded', () => {
         el.textContent = region;
         el.classList.remove('hidden');
         document.getElementById('region-filter').value = region;
+        // 좌측 패널 동기
+        if (lpRegionSelect) lpRegionSelect.value = region;
     }
 
     // ── UI 이벤트 ──────────────────────────────────────────────
@@ -512,14 +605,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const pf  = document.getElementById('platform-filter').value;
+            const pf  = currentPlatformFilter;
             const days = document.getElementById('days-filter')?.value || 14;
             const res = await fetch(`${API_BASE}/api/matches?region=${encodeURIComponent(region)}&days=${days}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json();
             if (result.status === 'error') { toast(result.message, 'error'); loadedRegions.delete(region); return; }
 
-            let matches = pf === 'ALL' ? result.data : result.data.filter(m => m.platform === pf);
+            // 오염된 데이터 필터링 (프론트엔드 c29어 레이어)
+            let matches = result.data.filter(m => !_isJunkData(m.stadium || m.stadium_group || ''));
+
             if (matches?.length > 0) {
                 allLoadedMatches.push(...matches);
                 updateStats();
@@ -546,14 +641,14 @@ document.addEventListener('DOMContentLoaded', () => {
         setRegionBadge(region, true);
 
         try {
-            const pf  = document.getElementById('platform-filter').value;
+            const pf  = currentPlatformFilter;
             const days = document.getElementById('days-filter')?.value || 14;
             const res = await fetch(`${API_BASE}/api/matches?region=${encodeURIComponent(region)}&days=${days}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json();
             if (result.status !== 'success') { loadedRegions.delete(region); return; }
 
-            let matches = pf === 'ALL' ? result.data : result.data.filter(m => m.platform === pf);
+            let matches = result.data.filter(m => !_isJunkData(m.stadium || m.stadium_group || ''));
             if (matches?.length > 0) {
                 allLoadedMatches.push(...matches);
                 updateStats();
@@ -570,6 +665,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── 한국 영역 좌표 유효성 검사 ────────────────────────────
     const _isKorea = (lat, lng) =>
         lat >= 33.0 && lat <= 38.7 && lng >= 124.5 && lng <= 132.0;
+
+    // ── 오염된 데이터 필터 (프론트엔드 방어 레이어) ─────────────
+    const JUNK_KEYWORDS = ['레슨', '훈련', '이벤트', '클래스', '아카데미',
+        '스킬 레슨', '일반 스킬', '키즈', '유소년', '교실', '캠프', '클리닉'];
+    function _isJunkData(name) {
+        if (!name) return true;
+        return JUNK_KEYWORDS.some(kw => name.includes(kw));
+    }
 
     // ── 물리 마커 없이 지역 중심으로 처리할 웹 플랫폼 목록 ──────
     const WEB_PLATFORM_VENUES = new Set(['아이엠그라운드']);
@@ -840,9 +943,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 현재 필터 적용
         const q = stadiumSearch.value.trim().toLowerCase();
+        const pf = currentPlatformFilter;
         const dateOk   = currentDateFilter === 'ALL' || dates.has(currentDateFilter);
         const searchOk = !q || stadiumData.name.toLowerCase().includes(q);
-        if (!dateOk || !searchOk) overlay.setMap(null);
+        const platformOk = pf === 'ALL' || stadiumData.matches.some(m => m.platform === pf);
+        if (!dateOk || !searchOk || !platformOk) overlay.setMap(null);
     }
 
     function clearMarkers() {
@@ -1211,7 +1316,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── 목록 뷰 렌더링 ────────────────────────────────────────
     function renderListView() {
-        const pf = document.getElementById('platform-filter').value;
+        const pf = currentPlatformFilter;
 
         // 필터 적용
         let stadiums = Object.values(allStadiumData).filter(sd => {
@@ -1667,7 +1772,7 @@ window.VenuePlatform = (function () {
     }
 
     // ── URL 파라미터로 돌아온 Kakao 콜백 처리 ───────────────────
-    function _handleKakaoRedirect() {
+    async function _handleKakaoRedirect() {
         const sp = new URLSearchParams(window.location.search);
 
         // 오류 처리
@@ -1676,6 +1781,47 @@ window.VenuePlatform = (function () {
             window.history.replaceState({}, document.title, '/');
             alert(`카카오 로그인 오류: ${err}`);
             return;
+        }
+
+        // URL 인가 코드(code) 감지 시 백엔드 직접 fetch 처리 (Kakao Redirect URI가 루트로 유도될 경우 대비)
+        const code = sp.get('code');
+        if (code) {
+            window.history.replaceState({}, document.title, '/');
+            try {
+                const res = await fetch(`${_base()}/api/auth/kakao/callback?code=${code}&format=json`);
+                if (!res.ok) {
+                    const errJson = await res.json();
+                    throw new Error(errJson.detail || '로그인 처리 실패');
+                }
+                const user = await res.json();
+                _user = user;
+                localStorage.setItem('pm_user', JSON.stringify(user));
+                _syncTopbarBtn();
+
+                if (!user.profile_complete) {
+                    const greet = $('pm-profile-greet');
+                    if (greet) greet.textContent = `${user.nickname}님, 환영해요! 🎉`;
+                    const av = $('pm-profile-avatar');
+                    if (av && user.avatar) { av.src = user.avatar; av.style.display = 'inline-block'; }
+                    const nickEl = $('pm-profile-nick');
+                    if (nickEl) nickEl.value = user.nickname || '';
+                    const modal = $('pm-profile-modal');
+                    if (modal) modal.style.display = 'flex';
+                } else {
+                    _renderUserBar();
+                    if ($('vp-tab-body')) _loadTab(_activeTab);
+                }
+
+                // 팝업 창 안에서 이 코드가 실행되었다면 부모 창에 성공 메시지를 보내고 창 닫기
+                if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({ type: 'KAKAO_LOGIN_DONE', user }, '*');
+                    window.close();
+                }
+                return;
+            } catch (e) {
+                alert(`카카오 로그인 실패: ${e.message}`);
+                return;
+            }
         }
 
         const token = sp.get('pm_token');

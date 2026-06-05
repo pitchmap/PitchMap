@@ -1,1 +1,93 @@
-[{"id": 1, "name": "서울"}, {"id": 2, "name": "경기"}, {"id": 3, "name": "인천"}, {"id": 9, "name": "강원"}, {"id": 4, "name": "대전/세종"}, {"id": 10, "name": "충남"}, {"id": 11, "name": "충북"}, {"id": 5, "name": "대구"}, {"id": 12, "name": "경북"}, {"id": 6, "name": "부산"}, {"id": 13, "name": "울산"}, {"id": 14, "name": "경남"}, {"id": 7, "name": "광주"}, {"id": 15, "name": "전남"}, {"id": 16, "name": "전북"}, {"id": 8, "name": "제주"}]
+{
+  "regions": [
+    {"id": 1, "name": "서울"},
+    {"id": 2, "name": "경기"},
+    {"id": 3, "name": "인천"},
+    {"id": 9, "name": "강원"},
+    {"id": 4, "name": "대전/세종"},
+    {"id": 10, "name": "충남"},
+    {"id": 11, "name": "충북"},
+    {"id": 5, "name": "대구"},
+    {"id": 12, "name": "경북"},
+    {"id": 6, "name": "부산"},
+    {"id": 13, "name": "울산"},
+    {"id": 14, "name": "경남"},
+    {"id": 7, "name": "광주"},
+    {"id": 15, "name": "전남"},
+    {"id": 16, "name": "전북"},
+    {"id": 8, "name": "제주"}
+  ],
+  "rental_venues": {
+    "어반풋볼파크 사상점": {
+      "platform_label": "어반풋볼",
+      "is_rental": true,
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=1&ref=main"
+    },
+    "어반풋볼파크 부산진구점": {
+      "platform_label": "어반풋볼",
+      "is_rental": true,
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=2&ref=main"
+    },
+    "어반풋볼파크 부산강서1호점": {
+      "platform_label": "어반풋볼",
+      "is_rental": true,
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=15&ref=main"
+    },
+    "어반풋볼파크 부산강서2호점": {
+      "platform_label": "어반풋볼",
+      "is_rental": true,
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=16&ref=main"
+    },
+    "어반풋볼파크 동래금정점": {
+      "platform_label": "어반풋볼",
+      "is_rental": true,
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=17&ref=main"
+    },
+    "어반풋볼파크 부산북구점": {
+      "platform_label": "어반풋볼",
+      "is_rental": true,
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=19&ref=main"
+    },
+    "어반풋볼파크 양산점": {
+      "platform_label": "어반풋볼",
+      "is_rental": true,
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=20&ref=main"
+    },
+    "HM풋살파크 창원점": {
+      "platform_label": "어반풋볼",
+      "is_rental": true,
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=21&ref=main"
+    },
+    "BJ풋살파크 마산점": {
+      "platform_label": "어반풋볼",
+      "is_rental": true,
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=22&ref=main"
+    },
+    "스포풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/spo-futsal-park/"
+    },
+    "센텀풋살장": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/centum-futsal/"
+    },
+    "레인보우풋살파크 사하": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/rainbow-futsal-saha/"
+    },
+    "BS89 연산": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/bs89-yeonsan/"
+    },
+    "HM풋살파크 화명점": {
+      "platform_label": "어반풋볼",
+      "is_rental": false,
+      "rental_url": ""
+    }
+  },
+  "junk_filter_keywords": ["레슨", "훈련", "이벤트", "클래스", "아카데미", "스킬 레슨", "일반 스킬", "키즈", "유소년", "교실"]
+}

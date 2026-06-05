@@ -1,81 +1,93 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PitchMap — 전국 풋살 매치 통합 검색</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-    window.__kakaoSDKReady = false;
-    (function () {
-        const base = (document.documentElement.dataset.apiUrl || window.location.origin)
-                     .replace(/\/$/, '');
-        fetch(base + '/api/config', { cache: 'no-store' })
-            .then(function (r) { return r.json(); })
-            .then(function (cfg) {
-                const s = document.createElement('script');
-                s.src = '//dapi.kakao.com/v2/maps/sdk.js?appkey='
+        window.__kakaoSDKReady = false;
+        (function () {
+            const base = (document.documentElement.dataset.apiUrl || window.location.origin)
+                .replace(/\/$/, '');
+            fetch(base + '/api/config', { cache: 'no-store' })
+                .then(function (r) { return r.json(); })
+                .then(function (cfg) {
+                    const s = document.createElement('script');
+                    s.src = '//dapi.kakao.com/v2/maps/sdk.js?appkey='
                         + cfg.kakao_app_key + '&libraries=services&autoload=false';
-                s.onload = function () {
-                    kakao.maps.load(function () {
-                        window.__kakaoSDKReady = true;
-                        window.dispatchEvent(new CustomEvent('kakao-maps-ready'));
-                    });
-                };
-                s.onerror = function () {
-                    console.error('[PitchMap] Kakao SDK 로드 실패 — 앱키를 확인하세요');
-                };
-                document.head.appendChild(s);
-            })
-            .catch(function () {
-                console.error('[PitchMap] /api/config 실패 — 서버가 실행 중인지 확인하세요');
-            });
-    })();
+                    s.onload = function () {
+                        kakao.maps.load(function () {
+                            window.__kakaoSDKReady = true;
+                            window.dispatchEvent(new CustomEvent('kakao-maps-ready'));
+                        });
+                    };
+                    s.onerror = function () {
+                        console.error('[PitchMap] Kakao SDK 로드 실패 — 앱키를 확인하세요');
+                    };
+                    document.head.appendChild(s);
+                })
+                .catch(function () {
+                    console.error('[PitchMap] /api/config 실패 — 서버가 실행 중인지 확인하세요');
+                });
+        })();
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Pretendard', sans-serif; overflow: hidden; margin: 0; }
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            overflow: hidden;
+            margin: 0;
+        }
 
         /* ── 웰컴 배경 ─────────────────── */
         .welcome-bg {
             background: linear-gradient(135deg, #0a0e1a 0%, #0f172a 40%, #0d1f3c 70%, #0a1628 100%);
         }
+
         .welcome-bg::before {
             content: '';
             position: absolute;
             inset: 0;
             background:
-                radial-gradient(ellipse 80% 60% at 20% 30%, rgba(37,99,235,0.12), transparent),
-                radial-gradient(ellipse 60% 80% at 80% 70%, rgba(16,185,129,0.08), transparent);
+                radial-gradient(ellipse 80% 60% at 20% 30%, rgba(37, 99, 235, 0.12), transparent),
+                radial-gradient(ellipse 60% 80% at 80% 70%, rgba(16, 185, 129, 0.08), transparent);
             pointer-events: none;
         }
+
         /* 미세 그리드 패턴 (축구장 느낌) */
         .welcome-bg::after {
             content: '';
             position: absolute;
             inset: 0;
             background-image:
-                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
             background-size: 60px 60px;
             pointer-events: none;
         }
 
         /* ── 유리 카드 ─────────────────── */
         .glass-card {
-            background: rgba(255,255,255,0.06);
+            background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(24px) saturate(180%);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
         }
 
         /* ── select 스타일 ─────────────── */
         .dark-select {
             appearance: none;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             color: white;
             font-family: 'Pretendard', sans-serif;
             font-weight: 600;
@@ -86,216 +98,525 @@
             width: 100%;
             transition: background 0.2s;
         }
-        .dark-select:hover { background: rgba(255,255,255,0.12); }
-        .dark-select:focus { outline: 2px solid rgba(37,99,235,0.6); outline-offset: 2px; }
-        .dark-select option { background: #1e293b; color: white; }
+
+        .dark-select:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .dark-select:focus {
+            outline: 2px solid rgba(37, 99, 235, 0.6);
+            outline-offset: 2px;
+        }
+
+        .dark-select option {
+            background: #1e293b;
+            color: white;
+        }
 
         /* ── 웰컴 페이지 진입 애니메이션 ─── */
         @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(24px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .fade-up { animation: fadeUp 0.6s ease both; }
-        .fade-up-1 { animation-delay: 0.05s; }
-        .fade-up-2 { animation-delay: 0.15s; }
-        .fade-up-3 { animation-delay: 0.25s; }
-        .fade-up-4 { animation-delay: 0.35s; }
+
+        .fade-up {
+            animation: fadeUp 0.6s ease both;
+        }
+
+        .fade-up-1 {
+            animation-delay: 0.05s;
+        }
+
+        .fade-up-2 {
+            animation-delay: 0.15s;
+        }
+
+        .fade-up-3 {
+            animation-delay: 0.25s;
+        }
+
+        .fade-up-4 {
+            animation-delay: 0.35s;
+        }
 
         /* ── 플랫폼 배지 ─────────────────── */
         .platform-pill {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 4px 10px; border-radius: 99px;
-            font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 99px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
         }
 
         /* ── 지도 페이지 컨트롤 바 ────────── */
         .map-topbar {
-            position: absolute; top: 0; left: 0; right: 0; z-index: 20;
-            background: rgba(255,255,255,0.97);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.97);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid #e2e8f0;
             padding: 10px 14px;
-            display: flex; align-items: center; gap: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         /* ── 날짜 필터 칩 바 ─────────────── */
         .chips-bar {
-            position: absolute; top: 58px; left: 0; right: 0; z-index: 20;
-            background: rgba(255,255,255,0.97);
+            position: absolute;
+            top: 58px;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.97);
             backdrop-filter: blur(8px);
             border-bottom: 1px solid #e2e8f0;
             padding: 8px 14px;
-            display: flex; align-items: center; gap: 6px;
-            overflow-x: auto; white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            white-space: nowrap;
         }
-        .chips-bar::-webkit-scrollbar { display: none; }
+
+        .chips-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        #days-filter, #platform-filter {
+            display: none !important;
+        }
 
         .chip {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 5px 12px; border-radius: 99px;
-            font-size: 12px; font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: 700;
             border: 1.5px solid #e2e8f0;
-            background: white; color: #64748b;
-            cursor: pointer; white-space: nowrap;
-            transition: all 0.18s ease; flex-shrink: 0;
+            background: white;
+            color: #64748b;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.18s ease;
+            flex-shrink: 0;
             letter-spacing: -0.1px;
         }
-        .chip:hover { border-color: #94a3b8; color: #334155; background: #f8fafc; }
-        .chip.active         { background: #2563eb; border-color: #2563eb; color: white; }
-        .chip.active-today   { background: #16a34a; border-color: #16a34a; color: white; }
-        .chip.active-tomorrow{ background: #2563eb; border-color: #2563eb; color: white; }
-        .chip.active-dayafter{ background: #7c3aed; border-color: #7c3aed; color: white; }
-        .chip.active-public  { background: #64748b; border-color: #64748b; color: white; }
-        .chip-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+        .chip:hover {
+            border-color: #94a3b8;
+            color: #334155;
+            background: #f8fafc;
+        }
+
+        .chip.active {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: white;
+        }
+
+        .chip.active-today {
+            background: #16a34a;
+            border-color: #16a34a;
+            color: white;
+        }
+
+        .chip.active-tomorrow {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: white;
+        }
+
+        .chip.active-dayafter {
+            background: #7c3aed;
+            border-color: #7c3aed;
+            color: white;
+        }
+
+        .chip.active-public {
+            background: #64748b;
+            border-color: #64748b;
+            color: white;
+        }
+
+        .chip-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
 
         /* ── 지도 페이지 콘텐츠 시작 위치 ─── */
         #map-content-area {
-            position: absolute; top: 104px; left: 0; right: 0; bottom: 0;
+            position: absolute;
+            top: 104px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @media (min-width: 768px) {
+            #map-content-area {
+                left: 280px;
+            }
         }
 
         /* ── 목록 뷰 ─────────────────────── */
         #list-view {
-            position: absolute; inset: 0; background: #f8fafc;
-            z-index: 25; display: none; flex-direction: column;
+            position: absolute;
+            inset: 0;
+            background: #f8fafc;
+            z-index: 25;
+            display: none;
+            flex-direction: column;
         }
-        #list-view.show { display: flex; }
-        .list-header { padding: 14px 16px; background: white; border-bottom: 1px solid #e2e8f0; }
-        .list-body { flex: 1; overflow-y: auto; }
+
+        #list-view.show {
+            display: flex;
+        }
+
+        .list-header {
+            padding: 14px 16px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .list-body {
+            flex: 1;
+            overflow-y: auto;
+        }
+
         .list-date-header {
-            padding: 10px 16px; background: #f1f5f9;
-            position: sticky; top: 0; z-index: 1;
+            padding: 10px 16px;
+            background: #f1f5f9;
+            position: sticky;
+            top: 0;
+            z-index: 1;
             border-bottom: 2px solid currentColor;
-            display: flex; align-items: center; gap: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
         .list-stadium-row {
-            padding: 13px 16px; border-bottom: 1px solid #e2e8f0;
-            background: white; display: flex; align-items: center; gap: 12px;
-            cursor: pointer; transition: background 0.12s;
+            padding: 13px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            background: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background 0.12s;
         }
-        .list-stadium-row:hover { background: #f8fafc; }
+
+        .list-stadium-row:hover {
+            background: #f8fafc;
+        }
+
         .list-platform-dot {
-            width: 38px; height: 38px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-weight: 800; font-size: 13px; flex-shrink: 0;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 13px;
+            flex-shrink: 0;
         }
 
         /* ── 사이드 패널 ─────────────────── */
         #side-panel {
-            position: absolute; top: 104px; right: 0; bottom: 0;
-            width: 340px; background: white; box-shadow: -4px 0 24px rgba(0,0,0,0.1);
-            z-index: 30; transform: translateX(100%);
-            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-            display: flex; flex-direction: column;
+            position: absolute;
+            top: 104px;
+            right: 0;
+            bottom: 0;
+            width: 340px;
+            background: white;
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+            z-index: 30;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
         }
-        #side-panel.open { transform: translateX(0); }
-        @media (min-width: 640px) { #side-panel { width: 380px; } }
+
+        #side-panel.open {
+            transform: translateX(0);
+        }
+
+        @media (min-width: 640px) {
+            #side-panel {
+                width: 380px;
+            }
+        }
 
         /* ── 사이드 패널 커스텀 스크롤바 ─── */
-        #match-list-scroll::-webkit-scrollbar { width: 4px; }
-        #match-list-scroll::-webkit-scrollbar-track { background: transparent; }
-        #match-list-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+        #match-list-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #match-list-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #match-list-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
 
         /* ── 사용자 위치 맥동 ─────────────── */
         @keyframes locPulse {
-            0%   { transform: scale(1); opacity: 0.5; }
-            70%  { transform: scale(2.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 0; }
+            0% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            70% {
+                transform: scale(2.8);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
         }
-        .loc-ring { animation: locPulse 2s ease-out infinite; }
+
+        .loc-ring {
+            animation: locPulse 2s ease-out infinite;
+        }
 
         /* ── 토스트 ──────────────────────── */
         #toast-wrap {
-            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-            z-index: 9999; display: flex; flex-direction: column; gap: 8px;
-            pointer-events: none; align-items: center;
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+            align-items: center;
         }
+
         .toast {
-            padding: 10px 18px; border-radius: 12px;
-            font-size: 13px; font-weight: 600; color: white;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-            opacity: 0; transform: translateY(10px);
-            transition: all 0.25s ease; white-space: nowrap;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.25s ease;
+            white-space: nowrap;
         }
-        .toast.show { opacity: 1; transform: translateY(0); }
-        .toast-success { background: #16a34a; }
-        .toast-info    { background: #2563eb; }
-        .toast-warn    { background: #f97316; }
-        .toast-error   { background: #dc2626; }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast-success {
+            background: #16a34a;
+        }
+
+        .toast-info {
+            background: #2563eb;
+        }
+
+        .toast-warn {
+            background: #f97316;
+        }
+
+        .toast-error {
+            background: #dc2626;
+        }
 
         /* ── 지역 로딩 배지 ──────────────── */
         .region-badge {
-            position: absolute; top: 116px; left: 50%; transform: translateX(-50%);
-            z-index: 21; display: none; align-items: center; gap: 8px;
-            background: rgba(255,255,255,0.95); border-radius: 99px;
-            padding: 6px 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-            font-size: 12px; font-weight: 600; color: #475569; white-space: nowrap;
+            position: absolute;
+            top: 116px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 21;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 99px;
+            padding: 6px 14px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            white-space: nowrap;
         }
-        .region-badge.show { display: flex; }
+
+        .region-badge.show {
+            display: flex;
+        }
 
         /* ── 통계 바 ─────────────────────── */
         .stats-bar {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 20; display: none; align-items: center; gap: 10px;
-            background: rgba(255,255,255,0.95); border-radius: 99px;
-            padding: 8px 18px; box-shadow: 0 3px 12px rgba(0,0,0,0.15);
-            font-size: 12px; font-weight: 700; white-space: nowrap;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 99px;
+            padding: 8px 18px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
         }
-        .stats-bar.show { display: flex; }
-        .stats-sep { color: #cbd5e1; font-size: 10px; }
+
+        .stats-bar.show {
+            display: flex;
+        }
+
+        .stats-sep {
+            color: #cbd5e1;
+            font-size: 10px;
+        }
 
         /* ── 범례 ─────────────────────────── */
         .legend-box {
-            position: absolute; bottom: 20px; left: 14px;
-            z-index: 20; background: rgba(255,255,255,0.95);
-            border-radius: 12px; padding: 10px 14px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.12);
-            font-size: 11px; font-weight: 600;
+            position: absolute;
+            bottom: 20px;
+            left: 14px;
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 10px 14px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+            font-size: 11px;
+            font-weight: 600;
         }
-        .legend-item { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
-        .legend-item:last-child { margin-bottom: 0; }
-        .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 5px;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
 
         /* ── 지도 로딩 오버레이 ──────────── */
         #map-loading {
-            position: absolute; inset: 0; background: rgba(255,255,255,0.88);
-            z-index: 40; display: none; flex-direction: column;
-            align-items: center; justify-content: center;
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.88);
+            z-index: 40;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             backdrop-filter: blur(4px);
         }
-        #map-loading.show { display: flex; }
+
+        #map-loading.show {
+            display: flex;
+        }
 
         /* ── 검색 입력 ───────────────────── */
         .search-input {
-            flex: 1; border: 1.5px solid #e2e8f0; border-radius: 10px;
-            padding: 7px 12px; font-size: 13px; font-family: 'Pretendard', sans-serif;
-            font-weight: 500; outline: none; background: #f8fafc; color: #1e293b;
+            flex: 1;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 7px 12px;
+            font-size: 13px;
+            font-family: 'Pretendard', sans-serif;
+            font-weight: 500;
+            outline: none;
+            background: #f8fafc;
+            color: #1e293b;
             transition: border-color 0.15s;
         }
-        .search-input:focus { border-color: #2563eb; background: white; }
-        .search-input::placeholder { color: #94a3b8; }
+
+        .search-input:focus {
+            border-color: #2563eb;
+            background: white;
+        }
+
+        .search-input::placeholder {
+            color: #94a3b8;
+        }
 
         /* ── 즐겨찾기 ───────────────────── */
         .fav-btn {
-            font-size: 18px; cursor: pointer; transition: transform 0.15s;
-            flex-shrink: 0; line-height: 1;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.15s;
+            flex-shrink: 0;
+            line-height: 1;
         }
-        .fav-btn:hover { transform: scale(1.2); }
-        .fav-star { color: #f59e0b; }
-        .fav-empty { color: #cbd5e1; }
+
+        .fav-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .fav-star {
+            color: #f59e0b;
+        }
+
+        .fav-empty {
+            color: #cbd5e1;
+        }
 
         /* ── 빈 상태 ─────────────────────── */
         .empty-state {
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; height: 100%; padding: 40px 20px;
-            color: #94a3b8; text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 40px 20px;
+            color: #94a3b8;
+            text-align: center;
         }
     </style>
 </head>
+
 <body class="h-screen w-screen relative">
 
     <!-- ═══════════════════════════════════════ 웰컴 페이지 ═══ -->
-    <div id="welcome-page"
-         class="welcome-bg absolute inset-0 z-50 flex items-center justify-center
+    <div id="welcome-page" class="welcome-bg absolute inset-0 z-50 flex items-center justify-center
                 transition-opacity duration-500 ease-in-out overflow-hidden">
         <div class="relative z-10 w-full max-w-md px-6 py-8 text-center">
 
@@ -310,13 +631,16 @@
 
             <!-- 플랫폼 배지 -->
             <div class="fade-up fade-up-2 flex justify-center gap-2 mb-7 flex-wrap">
-                <span class="platform-pill" style="background:rgba(37,99,235,0.2);border:1px solid rgba(37,99,235,0.4);color:#93c5fd;">
+                <span class="platform-pill"
+                    style="background:rgba(37,99,235,0.2);border:1px solid rgba(37,99,235,0.4);color:#93c5fd;">
                     <span style="width:6px;height:6px;border-radius:50%;background:#2563eb;flex-shrink:0;"></span>플랩풋볼
                 </span>
-                <span class="platform-pill" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#94a3b8;">
+                <span class="platform-pill"
+                    style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#94a3b8;">
                     <span style="width:6px;height:6px;border-radius:50%;background:#94a3b8;flex-shrink:0;"></span>어반풋볼
                 </span>
-                <span class="platform-pill" style="background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.35);color:#86efac;">
+                <span class="platform-pill"
+                    style="background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.35);color:#86efac;">
                     <span style="width:6px;height:6px;border-radius:50%;background:#16a34a;flex-shrink:0;"></span>공공구장
                 </span>
             </div>
@@ -326,11 +650,12 @@
 
                 <!-- 위치 감지 배지 (동적) -->
                 <div id="location-badge"
-                     class="hidden flex items-center justify-center gap-2 mb-4 text-xs font-semibold text-emerald-400">
-                    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    class="hidden flex items-center justify-center gap-2 mb-4 text-xs font-semibold text-emerald-400">
+                    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <span>현재 위치 감지됨 — 지역이 자동 설정됩니다</span>
                 </div>
@@ -357,21 +682,20 @@
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-white opacity-60">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
                     </div>
                 </div>
 
                 <!-- CTA 버튼 -->
-                <button id="search-btn"
-                        class="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700
+                <button id="search-btn" class="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700
                                text-white font-extrabold py-3.5 rounded-2xl
                                flex items-center justify-center gap-2 text-base
                                transition-all duration-200 shadow-lg shadow-blue-900/40
                                hover:scale-[1.02] active:scale-[0.98]">
                     <span>매치 찾아보기</span>
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                 </button>
             </div>
@@ -389,90 +713,177 @@
         <!-- ─── 상단 컨트롤 바 ─── -->
         <div class="map-topbar">
             <!-- 뒤로 가기 -->
-            <button id="back-btn"
-                    class="flex items-center gap-1.5 text-slate-500 hover:text-slate-900
+            <button id="back-btn" class="flex items-center gap-1.5 text-slate-500 hover:text-slate-900
                            font-semibold text-sm transition-colors flex-shrink-0">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
+            </button>
+
+            <!-- 좌측패널 토글 (모바일용) -->
+            <button id="left-panel-toggle" class="flex-shrink-0 flex items-center gap-1 border border-slate-200 rounded-lg
+                           px-2.5 py-1.5 text-xs font-bold text-slate-600 hover:text-blue-600
+                           hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
+                    style="display:none;">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h6" />
+                </svg>
+                <span>필터</span>
             </button>
 
             <!-- 구장 검색 -->
             <input id="stadium-search" type="text" placeholder="구장명 검색..." class="search-input">
 
             <!-- 내 주변 버튼 (GPS 통합) -->
-            <button id="gps-btn"
-                    class="flex-shrink-0 flex items-center gap-1.5 border border-slate-200 rounded-lg
+            <button id="gps-btn" class="flex-shrink-0 flex items-center gap-1.5 border border-slate-200 rounded-lg
                            px-2.5 py-1.5 text-xs font-bold text-slate-600 hover:text-blue-600
-                           hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
-                    title="내 주변 구장 보기">
-                <svg id="gps-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-                    <circle cx="12" cy="9" r="2.5" fill="currentColor" class="text-blue-500" style="opacity:.25"/>
-                    <circle cx="12" cy="9" r="1.5" fill="currentColor"/>
+                           hover:border-blue-300 hover:bg-blue-50 transition-all duration-200" title="내 주변 구장 보기">
+                <svg id="gps-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                    <circle cx="12" cy="9" r="2.5" fill="currentColor" class="text-blue-500" style="opacity:.25" />
+                    <circle cx="12" cy="9" r="1.5" fill="currentColor" />
                 </svg>
                 <span id="gps-label">내 주변</span>
             </button>
 
             <!-- 현재 지역 태그 -->
-            <span id="current-region-tag"
-                  class="flex-shrink-0 text-xs font-bold text-blue-600 bg-blue-50
+            <span id="current-region-tag" class="flex-shrink-0 text-xs font-bold text-blue-600 bg-blue-50
                          border border-blue-100 rounded-full px-2.5 py-1.5 hidden sm:block whitespace-nowrap">
                 서울
             </span>
 
             <!-- 로그인 버튼 (항상 노출) -->
-            <button id="pm-topbar-login-btn"
-                    onclick="VenuePlatform.openLoginModal()"
-                    class="flex-shrink-0 flex items-center gap-1 border border-slate-200 rounded-lg
+            <button id="pm-topbar-login-btn" onclick="VenuePlatform.openLoginModal()" class="flex-shrink-0 flex items-center gap-1 border border-slate-200 rounded-lg
                            px-2.5 py-1.5 text-xs font-bold transition-all duration-200"
-                    style="color:#2563eb;border-color:#bfdbfe;background:#eff6ff;">
+                style="color:#2563eb;border-color:#bfdbfe;background:#eff6ff;">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 <span id="pm-topbar-login-label">로그인</span>
             </button>
 
             <!-- 지도 / 목록 토글 -->
-            <button id="view-toggle-btn"
-                    class="flex-shrink-0 flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200
+            <button id="view-toggle-btn" class="flex-shrink-0 flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200
                            text-slate-700 font-bold text-xs rounded-lg px-2.5 py-1.5 transition-colors">
-                <svg id="view-icon-list" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                <svg id="view-icon-list" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
-                <svg id="view-icon-map" class="w-3.5 h-3.5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                <svg id="view-icon-map" class="w-3.5 h-3.5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                 </svg>
                 <span id="view-toggle-label">목록</span>
             </button>
         </div>
 
-        <!-- ─── 날짜 필터 칩 바 (동적 생성) ─── -->
+        <!-- ─── 날짜 필터 칩 바 (동적 생성) — 순수 날짜만 ─── -->
         <div class="chips-bar" id="chips-bar">
             <button class="chip active" data-date="ALL">전체</button>
             <!-- 날짜 칩은 데이터 로드 후 JS가 동적으로 삽입 -->
+        </div>
 
-            <!-- 구분선 + 날짜 기간 · 플랫폼 필터 (우측 고정) -->
-            <span style="flex-shrink:0;width:1px;height:18px;background:#e2e8f0;margin:0 4px;align-self:center;"></span>
-            <select id="days-filter"
-                    style="flex-shrink:0;border:1.5px solid #e2e8f0;border-radius:99px;
-                           padding:4px 10px;font-size:11px;font-weight:700;color:#64748b;
-                           background:white;cursor:pointer;outline:none;line-height:1.4;">
-                <option value="7">📅 7일</option>
-                <option value="14" selected>📅 14일</option>
-                <option value="21">📅 21일</option>
-                <option value="30">📅 30일</option>
-            </select>
-            <select id="platform-filter"
-                    style="flex-shrink:0;border:1.5px solid #e2e8f0;border-radius:99px;
-                           padding:4px 10px;font-size:11px;font-weight:700;color:#64748b;
-                           background:white;cursor:pointer;outline:none;line-height:1.4;">
-                <option value="ALL">전체</option>
-                <option value="PLAB">플랩</option>
-                <option value="URBAN">어반</option>
-                <option value="PUBLIC">공공</option>
-            </select>
+        <!-- hidden selects for JS reference (moved to left panel visually) -->
+        <select id="days-filter" style="display:none;">
+            <option value="7">7일</option>
+            <option value="14" selected>14일</option>
+            <option value="21">21일</option>
+            <option value="30">30일</option>
+        </select>
+        <select id="platform-filter" style="display:none;">
+            <option value="ALL">전체</option>
+            <option value="PLAB">플랩</option>
+            <option value="URBAN">어반</option>
+            <option value="PUBLIC">공공</option>
+        </select>
+
+        <!-- ─── 좌측 패널 (filter/search) ─── -->
+        <div id="left-panel">
+            <!-- 패널 헤더 -->
+            <div class="lp-section" style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-weight:900;font-size:14px;color:#1e293b;">&#9917; 필터</span>
+                <button id="left-panel-close-btn" class="hidden" style="border:none;background:none;cursor:pointer;
+                            font-size:16px;color:#94a3b8;padding:4px;">&times;</button>
+            </div>
+
+            <!-- 지역 검색 -->
+            <div class="lp-section">
+                <div class="lp-label">📍 지역</div>
+                <select id="lp-region-select" class="lp-select">
+                    <option value="서울">서울</option>
+                    <option value="경기">경기</option>
+                    <option value="인천">인천</option>
+                    <option value="부산">부산</option>
+                    <option value="대구">대구</option>
+                    <option value="광주">광주</option>
+                    <option value="대전/세종">대전/세종</option>
+                    <option value="울산">울산</option>
+                    <option value="강원">강원</option>
+                    <option value="충북">충북</option>
+                    <option value="충남">충남</option>
+                    <option value="전북">전북</option>
+                    <option value="전남">전남</option>
+                    <option value="경북">경북</option>
+                    <option value="경남">경남</option>
+                    <option value="제주">제주</option>
+                </select>
+            </div>
+
+            <!-- 날짜 기한 -->
+            <div class="lp-section">
+                <div class="lp-label">📅 기간</div>
+                <select id="lp-days-select" class="lp-select">
+                    <option value="7">7일 이내</option>
+                    <option value="14" selected>14일 이내</option>
+                    <option value="21">21일 이내</option>
+                    <option value="30">30일 이내</option>
+                </select>
+            </div>
+
+            <!-- 플랫폼 토글 -->
+            <div class="lp-section">
+                <div class="lp-label">⚙️ 플랫폼</div>
+                <div class="platform-toggle">
+                    <button class="platform-toggle-btn active" data-pf="ALL">전체</button>
+                    <button class="platform-toggle-btn" data-pf="PLAB">플랩</button>
+                    <button class="platform-toggle-btn" data-pf="URBAN">어반</button>
+                    <button class="platform-toggle-btn" data-pf="PUBLIC">공공</button>
+                </div>
+            </div>
+
+            <!-- 구장 검색 -->
+            <div class="lp-section">
+                <div class="lp-label">🔍 구장 검색</div>
+                <input id="lp-stadium-search" type="text" placeholder="구장명으로 검색..." class="lp-select"
+                       style="font-weight:500;">
+            </div>
+
+            <!-- 범례 -->
+            <div class="lp-section" style="margin-top:auto;border-top:1px solid #e2e8f0;border-bottom:none;">
+                <div class="lp-label">마커 범례</div>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    <div style="display:flex;align-items:center;gap:7px;">
+                        <div style="width:10px;height:10px;border-radius:50%;background:#2563eb;flex-shrink:0;"></div>
+                        <span style="font-size:11px;color:#475569;font-weight:600;">플랩풋볼</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:7px;">
+                        <div style="width:10px;height:10px;border-radius:50%;background:#1e293b;flex-shrink:0;"></div>
+                        <span style="font-size:11px;color:#475569;font-weight:600;">어반풋볼</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:7px;">
+                        <div style="width:10px;height:10px;border-radius:50%;background:#16a34a;flex-shrink:0;"></div>
+                        <span style="font-size:11px;color:#475569;font-weight:600;">공공대관</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:7px;">
+                        <div style="width:10px;height:10px;border-radius:50%;background:#7c3aed;flex-shrink:0;"></div>
+                        <span style="font-size:11px;color:#475569;font-weight:600;">복합</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- ─── 지도 + 기타 요소 컨테이너 ─── -->
@@ -484,9 +895,8 @@
             <!-- 지역 로딩 배지 -->
             <div id="region-loading-badge" class="region-badge">
                 <svg class="w-3.5 h-3.5 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                    <path class="opacity-75" fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
                 <span></span>
             </div>
@@ -495,19 +905,27 @@
             <div id="map-stats" class="stats-bar">
                 <span id="stats-total" class="text-slate-700"></span>
                 <span class="stats-sep">·</span>
-                <span id="stats-plab"  class="text-blue-600"></span>
+                <span id="stats-plab" class="text-blue-600"></span>
                 <span class="stats-sep">·</span>
                 <span id="stats-urban" class="text-slate-800"></span>
                 <span class="stats-sep">·</span>
                 <span id="stats-public" class="text-green-600"></span>
             </div>
 
-            <!-- 범례 -->
-            <div class="legend-box">
-                <div class="legend-item"><div class="legend-dot" style="background:#2563eb;"></div><span style="color:#475569;">플랩풋볼</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#1e293b;"></div><span style="color:#475569;">어반풋볼</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#16a34a;"></div><span style="color:#475569;">공공대관</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#7c3aed;"></div><span style="color:#475569;">복합</span></div>
+            <!-- 범례 (모바일 전용, 데스크톱은 좌측패널 내장) -->
+            <div class="legend-box" id="legend-box-mobile">
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:#2563eb;"></div><span style="color:#475569;">플랩풋볼</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:#1e293b;"></div><span style="color:#475569;">어반풋볼</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:#16a34a;"></div><span style="color:#475569;">공공대관</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:#7c3aed;"></div><span style="color:#475569;">복합</span>
+                </div>
             </div>
 
             <!-- 지도 로딩 오버레이 -->
@@ -527,8 +945,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <!-- 즐겨찾기 필터 버튼 -->
-                    <button id="fav-filter-btn"
-                            class="text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-200
+                    <button id="fav-filter-btn" class="text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-200
                                    text-slate-500 hover:border-amber-400 hover:text-amber-500 transition-colors">
                         ☆ 즐겨찾기
                     </button>
@@ -556,10 +973,10 @@
                         <!-- 즐겨찾기 버튼 -->
                         <button id="fav-btn" class="fav-btn fav-empty" title="즐겨찾기">☆</button>
                         <!-- 닫기 버튼 -->
-                        <button id="close-panel-btn"
-                                class="text-slate-400 hover:text-slate-600 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        <button id="close-panel-btn" class="text-slate-400 hover:text-slate-600 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
@@ -574,9 +991,8 @@
                 <!-- 로딩 -->
                 <div id="panel-loading" class="empty-state hidden">
                     <svg class="animate-spin h-8 w-8 mb-3 text-blue-500" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                        <path class="opacity-75" fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
                     <p>정보를 불러오는 중...</p>
                 </div>
@@ -596,8 +1012,7 @@
     <div id="toast-wrap"></div>
 
     <!-- ── 로그인 모달 ──────────────────────────────────── -->
-    <div id="pm-login-modal"
-         style="display:none;position:fixed;inset:0;z-index:200;
+    <div id="pm-login-modal" style="display:none;position:fixed;inset:0;z-index:200;
                 background:rgba(15,23,42,0.55);align-items:center;justify-content:center;">
         <div style="background:#fff;border-radius:20px;padding:28px 24px;
                     width:320px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
@@ -607,15 +1022,14 @@
                 로그인하고 매칭에 참여하세요</p>
 
             <!-- 카카오 로그인 (primary) -->
-            <button id="pm-kakao-btn" onclick="VenuePlatform.openKakaoLogin()"
-                style="width:100%;padding:13px 16px;background:#FEE500;color:#3C1E1E;
+            <button id="pm-kakao-btn" onclick="VenuePlatform.openKakaoLogin()" style="width:100%;padding:13px 16px;background:#FEE500;color:#3C1E1E;
                        border:none;border-radius:12px;font-weight:900;font-size:14px;
                        cursor:pointer;margin-bottom:14px;display:flex;align-items:center;
                        justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(254,229,0,0.45);">
                 <svg width="20" height="20" viewBox="0 0 24 24" style="flex-shrink:0;">
                     <path fill="#3C1E1E" d="M12 3C6.48 3 2 6.93 2 11.75c0 3.08 1.74 5.79
                     4.36 7.34L5.25 22.5l4.56-2.48A10.5 10.5 0 0 0 12 20.5c5.52 0
-                    10-3.93 10-8.75S17.52 3 12 3z"/>
+                    10-3.93 10-8.75S17.52 3 12 3z" />
                 </svg>
                 카카오로 1초 로그인
             </button>
@@ -628,29 +1042,39 @@
             </div>
 
             <!-- 닉네임 직접 입력 -->
-            <input id="pm-login-nick" class="ji" placeholder="닉네임 *"
-                   style="margin-bottom:8px;">
+            <input id="pm-login-nick" class="ji" placeholder="닉네임 *" style="margin-bottom:8px;">
             <select id="pm-login-region" class="ji" style="margin-bottom:8px;">
                 <option value="">활동 지역 *</option>
-                <option>서울</option><option>부산</option><option>인천</option>
-                <option>경기</option><option>대구</option><option>광주</option>
-                <option>대전/세종</option><option>울산</option><option>경남</option>
-                <option>경북</option><option>강원</option><option>전북</option>
-                <option>전남</option><option>충남</option><option>충북</option>
+                <option>서울</option>
+                <option>부산</option>
+                <option>인천</option>
+                <option>경기</option>
+                <option>대구</option>
+                <option>광주</option>
+                <option>대전/세종</option>
+                <option>울산</option>
+                <option>경남</option>
+                <option>경북</option>
+                <option>강원</option>
+                <option>전북</option>
+                <option>전남</option>
+                <option>충남</option>
+                <option>충북</option>
                 <option>제주</option>
             </select>
             <select id="pm-login-pos" class="ji" style="margin-bottom:16px;">
-                <option>올포지션</option><option>GK</option><option>DF</option>
-                <option>MF</option><option>FW</option>
+                <option>올포지션</option>
+                <option>GK</option>
+                <option>DF</option>
+                <option>MF</option>
+                <option>FW</option>
             </select>
-            <button onclick="VenuePlatform.submitLogin()"
-                style="width:100%;padding:11px;background:#2563eb;color:#fff;
+            <button onclick="VenuePlatform.submitLogin()" style="width:100%;padding:11px;background:#2563eb;color:#fff;
                        border:none;border-radius:12px;font-weight:800;
                        font-size:13px;cursor:pointer;margin-bottom:8px;">
                 닉네임으로 시작하기
             </button>
-            <button onclick="VenuePlatform.closeLoginModal()"
-                style="width:100%;padding:10px;background:none;border:none;
+            <button onclick="VenuePlatform.closeLoginModal()" style="width:100%;padding:10px;background:none;border:none;
                        color:#94a3b8;font-size:13px;cursor:pointer;">
                 닫기
             </button>
@@ -658,8 +1082,7 @@
     </div>
 
     <!-- ── 카카오 로그인 후 프로필 설정 모달 (enhanced) ─── -->
-    <div id="pm-profile-modal"
-         style="display:none;position:fixed;inset:0;z-index:210;
+    <div id="pm-profile-modal" style="display:none;position:fixed;inset:0;z-index:210;
                 background:rgba(15,23,42,0.65);align-items:center;justify-content:center;
                 padding:16px;">
         <div style="background:#fff;border-radius:24px;padding:28px 24px;
@@ -669,11 +1092,10 @@
             <!-- 헤더 -->
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
                 <img id="pm-profile-avatar" src="" width="48" height="48"
-                     style="border-radius:50%;object-fit:cover;border:3px solid #FEE500;display:none;"
-                     onerror="this.style.display='none'">
+                    style="border-radius:50%;object-fit:cover;border:3px solid #FEE500;display:none;"
+                    onerror="this.style.display='none'">
                 <div>
-                    <p id="pm-profile-greet"
-                       style="font-weight:900;font-size:17px;color:#1e293b;margin:0;"></p>
+                    <p id="pm-profile-greet" style="font-weight:900;font-size:17px;color:#1e293b;margin:0;"></p>
                     <p style="font-size:12px;color:#64748b;margin:3px 0 0;">
                         아래 정보를 입력하면 매칭 기능이 활성화됩니다!</p>
                 </div>
@@ -681,16 +1103,14 @@
 
             <!-- 닉네임 -->
             <label class="pm-field-label">닉네임 <span style="color:#dc2626;">*</span></label>
-            <input id="pm-profile-nick" class="ji" placeholder="사용할 닉네임"
-                   style="margin-bottom:14px;">
+            <input id="pm-profile-nick" class="ji" placeholder="사용할 닉네임" style="margin-bottom:14px;">
 
             <!-- 선호 지역 (구/동 단위) -->
             <label class="pm-field-label">선호 지역
                 <span style="color:#dc2626;">*</span>
                 <span style="font-weight:400;color:#94a3b8;">(예: 부산 남구, 인천 부평구)</span>
             </label>
-            <input id="pm-profile-region" class="ji" placeholder="예) 부산 남구"
-                   style="margin-bottom:14px;">
+            <input id="pm-profile-region" class="ji" placeholder="예) 부산 남구" style="margin-bottom:14px;">
 
             <!-- 포지션 -->
             <label class="pm-field-label">선호 포지션 <span style="color:#dc2626;">*</span></label>
@@ -712,8 +1132,7 @@
                     <span>🧤 GK</span>
                 </label>
                 <label class="pm-radio-btn" style="grid-column:span 2;">
-                    <input type="radio" name="pm-profile-pos-r" value="올포지션"
-                           style="display:none;" checked>
+                    <input type="radio" name="pm-profile-pos-r" value="올포지션" style="display:none;" checked>
                     <span>⚽ 올포지션</span>
                 </label>
             </div>
@@ -744,11 +1163,9 @@
                 </label>
             </div>
 
-            <button onclick="VenuePlatform.submitProfile()"
-                style="width:100%;padding:14px;background:#2563eb;color:#fff;
+            <button onclick="VenuePlatform.submitProfile()" style="width:100%;padding:14px;background:#2563eb;color:#fff;
                        border:none;border-radius:12px;font-weight:900;font-size:14px;
-                       cursor:pointer;transition:opacity 0.18s;"
-                onmouseover="this.style.opacity='0.85'"
+                       cursor:pointer;transition:opacity 0.18s;" onmouseover="this.style.opacity='0.85'"
                 onmouseout="this.style.opacity='1'">
                 프로필 저장하고 시작하기 →
             </button>
@@ -759,32 +1176,73 @@
          ⚽ 조축 매칭판 — 기존 DOM과 완전 독립 (id 접두사: jochuk-)
          ══════════════════════════════════════════════════════════ -->
     <style>
-        .ji { display:block;width:100%;border:1px solid #e2e8f0;border-radius:8px;
-              padding:7px 12px;font-size:13px;outline:none;background:#fff;color:#1e293b; }
-        .ji:focus { outline:2px solid #10b981;outline-offset:-2px; }
-        #jochuk-panel { font-family:'Pretendard',system-ui,sans-serif; }
-        .jtab-btn.jtab-active { color:#10b981;border-bottom:2.5px solid #10b981; }
-        .jtab-pane.hidden { display:none; }
-        /* 프로필 모달 라디오 버튼 */
-        .pm-field-label { display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px; }
-        .pm-radio-btn { cursor:pointer; }
-        .pm-radio-btn > span:not(:first-child),
-        .pm-radio-btn > span:last-child {
-            display:block;border:1.5px solid #e2e8f0;border-radius:8px;
-            padding:7px 8px;font-size:12px;font-weight:700;color:#475569;
-            text-align:center;transition:all 0.15s;
+        .ji {
+            display: block;
+            width: 100%;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 7px 12px;
+            font-size: 13px;
+            outline: none;
+            background: #fff;
+            color: #1e293b;
         }
-        .pm-radio-btn input:checked ~ span,
-        .pm-radio-btn input:checked + span {
-            border-color:#2563eb;background:#eff6ff;color:#2563eb;
+
+        .ji:focus {
+            outline: 2px solid #10b981;
+            outline-offset: -2px;
+        }
+
+        #jochuk-panel {
+            font-family: 'Pretendard', system-ui, sans-serif;
+        }
+
+        .jtab-btn.jtab-active {
+            color: #10b981;
+            border-bottom: 2.5px solid #10b981;
+        }
+
+        .jtab-pane.hidden {
+            display: none;
+        }
+
+        /* 프로필 모달 라디오 버튼 */
+        .pm-field-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 5px;
+        }
+
+        .pm-radio-btn {
+            cursor: pointer;
+        }
+
+        .pm-radio-btn>span:not(:first-child),
+        .pm-radio-btn>span:last-child {
+            display: block;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 7px 8px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            text-align: center;
+            transition: all 0.15s;
+        }
+
+        .pm-radio-btn input:checked~span,
+        .pm-radio-btn input:checked+span {
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #2563eb;
         }
     </style>
 
     <!-- 진입 플로팅 버튼 (map-page 표시 시 JS가 unhide) -->
-    <div id="jochuk-fab"
-         style="display:none;position:fixed;bottom:88px;left:16px;z-index:30;">
-        <button id="jochuk-open-btn"
-            style="display:flex;align-items:center;gap:6px;background:#059669;color:#fff;
+    <div id="jochuk-fab" style="display:none;position:fixed;bottom:88px;left:16px;z-index:30;">
+        <button id="jochuk-open-btn" style="display:flex;align-items:center;gap:6px;background:#059669;color:#fff;
                    padding:9px 16px;border-radius:99px;font-weight:800;font-size:13px;
                    box-shadow:0 4px 16px rgba(5,150,105,0.35);border:none;cursor:pointer;">
             ⚽ <span>조축 매칭판</span>
@@ -793,7 +1251,7 @@
 
     <!-- 전체화면 패널 -->
     <div id="jochuk-panel"
-         style="display:none;position:fixed;inset:0;z-index:60;background:#fff;flex-direction:column;">
+        style="display:none;position:fixed;inset:0;z-index:60;background:#fff;flex-direction:column;">
 
         <!-- 헤더 -->
         <div style="display:flex;align-items:center;justify-content:space-between;
@@ -803,21 +1261,17 @@
                 <span style="font-weight:900;font-size:17px;letter-spacing:-0.5px;">조축 매칭판</span>
                 <span style="font-size:11px;opacity:0.75;">부산·인천 특화</span>
             </div>
-            <button id="jochuk-close-btn"
-                style="background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;
+            <button id="jochuk-close-btn" style="background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;
                        width:30px;height:30px;border-radius:50%;font-size:16px;line-height:30px;">✕</button>
         </div>
 
         <!-- 탭 바 -->
         <div style="display:flex;border-bottom:1px solid #e2e8f0;flex-shrink:0;background:#fff;">
-            <button class="jtab-btn jtab-active" data-jtab="exchange"
-                style="flex:1;padding:11px 4px;font-size:12px;font-weight:700;border:none;
+            <button class="jtab-btn jtab-active" data-jtab="exchange" style="flex:1;padding:11px 4px;font-size:12px;font-weight:700;border:none;
                        background:none;cursor:pointer;color:#64748b;">반반 교류전</button>
-            <button class="jtab-btn" data-jtab="recruit"
-                style="flex:1;padding:11px 4px;font-size:12px;font-weight:700;border:none;
+            <button class="jtab-btn" data-jtab="recruit" style="flex:1;padding:11px 4px;font-size:12px;font-weight:700;border:none;
                        background:none;cursor:pointer;color:#64748b;">선모집 후대관</button>
-            <button class="jtab-btn" data-jtab="teams"
-                style="flex:1;padding:11px 4px;font-size:12px;font-weight:700;border:none;
+            <button class="jtab-btn" data-jtab="teams" style="flex:1;padding:11px 4px;font-size:12px;font-weight:700;border:none;
                        background:none;cursor:pointer;color:#64748b;">팀 디렉토리</button>
         </div>
 
@@ -825,24 +1279,29 @@
         <div style="flex:1;overflow-y:auto;background:#f8fafc;">
 
             <!-- ── A. 반반 교류전 ── -->
-            <div id="jochuk-tab-exchange" class="jtab-pane" style="padding:12px;display:flex;flex-direction:column;gap:10px;">
+            <div id="jochuk-tab-exchange" class="jtab-pane"
+                style="padding:12px;display:flex;flex-direction:column;gap:10px;">
                 <!-- 필터 -->
                 <div style="display:flex;gap:6px;">
                     <select id="jx-r" class="ji" style="flex:1;">
                         <option value="">전체 지역</option>
-                        <option>부산</option><option>인천</option><option>서울</option><option>경기</option>
+                        <option>부산</option>
+                        <option>인천</option>
+                        <option>서울</option>
+                        <option>경기</option>
                     </select>
                     <select id="jx-sk" class="ji" style="flex:1;">
                         <option value="">전체 실력</option>
-                        <option>입문</option><option>초급</option><option>중급</option><option>고급</option>
+                        <option>입문</option>
+                        <option>초급</option>
+                        <option>중급</option>
+                        <option>고급</option>
                     </select>
-                    <button onclick="JochukPlatform.loadExchange()"
-                        style="padding:0 12px;background:#e2e8f0;border:none;border-radius:8px;
+                    <button onclick="JochukPlatform.loadExchange()" style="padding:0 12px;background:#e2e8f0;border:none;border-radius:8px;
                                font-size:12px;font-weight:700;cursor:pointer;">검색</button>
                 </div>
                 <!-- 등록 토글 -->
-                <button onclick="JochukPlatform.toggleForm('jx-form')"
-                    style="width:100%;padding:9px;border:2px dashed #10b981;border-radius:12px;
+                <button onclick="JochukPlatform.toggleForm('jx-form')" style="width:100%;padding:9px;border:2px dashed #10b981;border-radius:12px;
                            background:none;color:#059669;font-weight:800;font-size:13px;cursor:pointer;">
                     + 교류전 등록하기
                 </button>
@@ -853,7 +1312,10 @@
                     <div style="display:flex;gap:6px;">
                         <select class="ji" id="jx-region" style="flex:1;">
                             <option value="">지역 *</option>
-                            <option>부산</option><option>인천</option><option>서울</option><option>경기</option>
+                            <option>부산</option>
+                            <option>인천</option>
+                            <option>서울</option>
+                            <option>경기</option>
                         </select>
                         <input class="ji" id="jx-district" placeholder="구/동 *" style="flex:1;">
                     </div>
@@ -861,16 +1323,21 @@
                     <input class="ji" id="jx-match_date" type="datetime-local">
                     <div style="display:flex;gap:6px;">
                         <select class="ji" id="jx-skill_level" style="flex:1;">
-                            <option>중급</option><option>입문</option><option>초급</option><option>고급</option>
+                            <option>중급</option>
+                            <option>입문</option>
+                            <option>초급</option>
+                            <option>고급</option>
                         </select>
                         <select class="ji" id="jx-age_group" style="flex:1;">
-                            <option>30대</option><option>20대</option><option>40대</option><option>50대+</option>
+                            <option>30대</option>
+                            <option>20대</option>
+                            <option>40대</option>
+                            <option>50대+</option>
                         </select>
                     </div>
                     <input class="ji" id="jx-fee_total" type="number" placeholder="총 구장비 (원, 반반 정산)" value="0">
                     <input class="ji" id="jx-contact_url" placeholder="연락처 URL (오픈채팅 등) *">
-                    <button onclick="JochukPlatform.submitExchange()"
-                        style="width:100%;padding:10px;background:#059669;color:#fff;
+                    <button onclick="JochukPlatform.submitExchange()" style="width:100%;padding:10px;background:#059669;color:#fff;
                                border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
                         교류전 등록
                     </button>
@@ -880,18 +1347,20 @@
             </div>
 
             <!-- ── B. 선모집 후대관 ── -->
-            <div id="jochuk-tab-recruit" class="jtab-pane hidden" style="padding:12px;display:flex;flex-direction:column;gap:10px;">
+            <div id="jochuk-tab-recruit" class="jtab-pane hidden"
+                style="padding:12px;display:flex;flex-direction:column;gap:10px;">
                 <div style="display:flex;gap:6px;">
                     <select id="jr-r" class="ji" style="flex:1;">
                         <option value="">전체 지역</option>
-                        <option>부산</option><option>인천</option><option>서울</option><option>경기</option>
+                        <option>부산</option>
+                        <option>인천</option>
+                        <option>서울</option>
+                        <option>경기</option>
                     </select>
-                    <button onclick="JochukPlatform.loadRecruit()"
-                        style="padding:0 12px;background:#e2e8f0;border:none;border-radius:8px;
+                    <button onclick="JochukPlatform.loadRecruit()" style="padding:0 12px;background:#e2e8f0;border:none;border-radius:8px;
                                font-size:12px;font-weight:700;cursor:pointer;">검색</button>
                 </div>
-                <button onclick="JochukPlatform.toggleForm('jr-form')"
-                    style="width:100%;padding:9px;border:2px dashed #3b82f6;border-radius:12px;
+                <button onclick="JochukPlatform.toggleForm('jr-form')" style="width:100%;padding:9px;border:2px dashed #3b82f6;border-radius:12px;
                            background:none;color:#2563eb;font-weight:800;font-size:13px;cursor:pointer;">
                     + 모집 공고 올리기
                 </button>
@@ -901,7 +1370,10 @@
                     <div style="display:flex;gap:6px;">
                         <select class="ji" id="jr-region" style="flex:1;">
                             <option value="">지역 *</option>
-                            <option>부산</option><option>인천</option><option>서울</option><option>경기</option>
+                            <option>부산</option>
+                            <option>인천</option>
+                            <option>서울</option>
+                            <option>경기</option>
                         </select>
                         <input class="ji" id="jr-district" placeholder="구/동 *" style="flex:1;">
                     </div>
@@ -909,15 +1381,16 @@
                     <input class="ji" id="jr-match_date" type="datetime-local">
                     <input class="ji" id="jr-booking_deadline" type="datetime-local" placeholder="모집 마감일 *">
                     <div style="display:flex;gap:6px;">
-                        <input class="ji" id="jr-min_players" type="number" placeholder="최소 인원" value="10" style="flex:1;">
-                        <input class="ji" id="jr-max_players" type="number" placeholder="최대 인원" value="14" style="flex:1;">
+                        <input class="ji" id="jr-min_players" type="number" placeholder="최소 인원" value="10"
+                            style="flex:1;">
+                        <input class="ji" id="jr-max_players" type="number" placeholder="최대 인원" value="14"
+                            style="flex:1;">
                     </div>
                     <input class="ji" id="jr-fee_per_person" type="number" placeholder="1인당 분담금 (원)" value="0">
                     <input class="ji" id="jr-booking_url" placeholder="공공예약 링크 (선택)">
                     <input class="ji" id="jr-host_nickname" placeholder="내 닉네임 *">
                     <input class="ji" id="jr-contact_url" placeholder="연락처 URL *">
-                    <button onclick="JochukPlatform.submitRecruit()"
-                        style="width:100%;padding:10px;background:#2563eb;color:#fff;
+                    <button onclick="JochukPlatform.submitRecruit()" style="width:100%;padding:10px;background:#2563eb;color:#fff;
                                border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
                         모집 공고 등록
                     </button>
@@ -926,26 +1399,31 @@
             </div>
 
             <!-- ── C. 팀 디렉토리 ── -->
-            <div id="jochuk-tab-teams" class="jtab-pane hidden" style="padding:12px;display:flex;flex-direction:column;gap:10px;">
+            <div id="jochuk-tab-teams" class="jtab-pane hidden"
+                style="padding:12px;display:flex;flex-direction:column;gap:10px;">
                 <div style="display:flex;gap:6px;flex-wrap:wrap;">
                     <select id="jt-r" class="ji" style="flex:1;min-width:80px;">
                         <option value="">전체 지역</option>
-                        <option>부산</option><option>인천</option><option>서울</option><option>경기</option>
+                        <option>부산</option>
+                        <option>인천</option>
+                        <option>서울</option>
+                        <option>경기</option>
                     </select>
                     <input class="ji" id="jt-d" placeholder="구/동" style="flex:1;min-width:60px;">
                     <select id="jt-sk" class="ji" style="flex:1;min-width:80px;">
                         <option value="">전체 실력</option>
-                        <option>입문</option><option>초급</option><option>중급</option><option>고급</option>
+                        <option>입문</option>
+                        <option>초급</option>
+                        <option>중급</option>
+                        <option>고급</option>
                     </select>
                     <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;">
                         <input type="checkbox" id="jt-rec"> 모집중만
                     </label>
-                    <button onclick="JochukPlatform.loadTeams()"
-                        style="padding:0 12px;background:#e2e8f0;border:none;border-radius:8px;
+                    <button onclick="JochukPlatform.loadTeams()" style="padding:0 12px;background:#e2e8f0;border:none;border-radius:8px;
                                font-size:12px;font-weight:700;cursor:pointer;">검색</button>
                 </div>
-                <button onclick="JochukPlatform.toggleForm('jt-form')"
-                    style="width:100%;padding:9px;border:2px dashed #7c3aed;border-radius:12px;
+                <button onclick="JochukPlatform.toggleForm('jt-form')" style="width:100%;padding:9px;border:2px dashed #7c3aed;border-radius:12px;
                            background:none;color:#6d28d9;font-weight:800;font-size:13px;cursor:pointer;">
                     + 우리 팀 등록하기
                 </button>
@@ -955,37 +1433,52 @@
                     <div style="display:flex;gap:6px;">
                         <select class="ji" id="jt-region" style="flex:1;">
                             <option value="">지역 *</option>
-                            <option>부산</option><option>인천</option><option>서울</option><option>경기</option>
+                            <option>부산</option>
+                            <option>인천</option>
+                            <option>서울</option>
+                            <option>경기</option>
                         </select>
                         <input class="ji" id="jt-district" placeholder="구/동 *" style="flex:1;">
                     </div>
                     <input class="ji" id="jt-home_pitch" placeholder="홈구장 (선택)">
                     <div style="display:flex;gap:6px;">
                         <select class="ji" id="jt-match_day" style="flex:1;">
-                            <option>토요일</option><option>일요일</option><option>토·일</option><option>평일</option>
+                            <option>토요일</option>
+                            <option>일요일</option>
+                            <option>토·일</option>
+                            <option>평일</option>
                         </select>
                         <select class="ji" id="jt-match_time" style="flex:1;">
-                            <option>오전 6-8시</option><option>오전 7-9시</option>
-                            <option>오전 8-10시</option><option>오전 10-12시</option><option>오후</option>
+                            <option>오전 6-8시</option>
+                            <option>오전 7-9시</option>
+                            <option>오전 8-10시</option>
+                            <option>오전 10-12시</option>
+                            <option>오후</option>
                         </select>
                     </div>
                     <div style="display:flex;gap:6px;">
                         <select class="ji" id="jt-age_group" style="flex:1;">
-                            <option>30대</option><option>20대</option><option>40대</option><option>50대+</option><option>혼성</option>
+                            <option>30대</option>
+                            <option>20대</option>
+                            <option>40대</option>
+                            <option>50대+</option>
+                            <option>혼성</option>
                         </select>
                         <select class="ji" id="jt-skill_level" style="flex:1;">
-                            <option>중급</option><option>입문</option><option>초급</option><option>고급</option>
+                            <option>중급</option>
+                            <option>입문</option>
+                            <option>초급</option>
+                            <option>고급</option>
                         </select>
                     </div>
                     <input class="ji" id="jt-member_count" type="number" placeholder="팀원 수" value="11">
                     <input class="ji" id="jt-open_chat_url" placeholder="카카오 오픈채팅 URL">
-                    <textarea class="ji" id="jt-description" rows="3"
-                              style="resize:none;" placeholder="팀 소개"></textarea>
+                    <textarea class="ji" id="jt-description" rows="3" style="resize:none;"
+                        placeholder="팀 소개"></textarea>
                     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
                         <input type="checkbox" id="jt-recruiting" checked> 용병/신입 모집 중
                     </label>
-                    <button onclick="JochukPlatform.submitTeam()"
-                        style="width:100%;padding:10px;background:#7c3aed;color:#fff;
+                    <button onclick="JochukPlatform.submitTeam()" style="width:100%;padding:10px;background:#7c3aed;color:#fff;
                                border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
                         팀 등록
                     </button>
@@ -998,4 +1491,5 @@
 
     <script src="main.js"></script>
 </body>
+
 </html>

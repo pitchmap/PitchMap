@@ -124,25 +124,36 @@ def _check_rate_limit(client_ip: str) -> bool:
     _rate_buckets[client_ip].append(now)
     return True
 
-# 대관 가능 구장 화이트리스트 — 플랩/어반 공식 예약 페이지 연결
+# 대관 가능 구장 화이트리스트 — 구장별 1:1 상세 예약 페이지 연결
 # 이 목록에 없는 PLAB/URBAN 구장은 소셜매치 전용 → is_rental: False
 RENTAL_WHITELIST: dict[str, dict] = {
-    # ── 어반풋볼 대관 파트너 ─────────────────────────────────────
-    "어반풋볼파크 사상점":        {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
-    "어반풋볼파크 부산진구점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
-    "어반풋볼파크 부산강서1호점": {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
-    "어반풋볼파크 부산강서2호점": {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
-    "어반풋볼파크 동래금정점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
-    "어반풋볼파크 부산북구점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
-    "어반풋볼파크 양산점":        {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
-    "HM풋살파크 창원점":          {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
-    "BJ풋살파크 마산점":          {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
-    # ── 플랩풋볼 대관 파트너 ─────────────────────────────────────
-    "스포풋살파크":               {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/"},
-    "센텀풋살장":                 {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/"},
-    "레인보우풋살파크 사하":      {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/"},
-    "BS89 연산":                  {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/"},
+    # ── 어반풋볼 대관 파트너 (구장별 상세 페이지) ────────────────
+    "어반풋볼파크 사상점":        {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=1&ref=main"},
+    "어반풋볼파크 부산진구점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=2&ref=main"},
+    "어반풋볼파크 부산강서1호점": {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=15&ref=main"},
+    "어반풋볼파크 부산강서2호점": {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=16&ref=main"},
+    "어반풋볼파크 동래금정점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=17&ref=main"},
+    "어반풋볼파크 부산북구점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=19&ref=main"},
+    "어반풋볼파크 양산점":        {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=20&ref=main"},
+    "HM풋살파크 창원점":          {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=21&ref=main"},
+    "BJ풋살파크 마산점":          {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=22&ref=main"},
+    # ── 플랩풋볼 대관 파트너 (구장별 상세 페이지) ────────────────
+    "스포풋살파크":               {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/spo-futsal-park/"},
+    "센텀풋살장":                 {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/centum-futsal/"},
+    "레인보우풋살파크 사하":      {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/rainbow-futsal-saha/"},
+    "BS89 연산":                  {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/bs89-yeonsan/"},
 }
+
+# 대관 불가 구장 블랙리스트 — 소셜매치 전용 (리뷰만 표시)
+NO_RENTAL_STADIUMS: set[str] = {
+    "HM풋살파크 화명점",
+}
+
+# 오염된 크롤링 데이터 필터 키워드 — 이벤트/교육/레슨 타이틀 원천 차단
+JUNK_FILTER_KEYWORDS: list[str] = [
+    "레슨", "훈련", "이벤트", "클래스", "아카데미", "스킬 레슨",
+    "일반 스킬", "키즈", "유소년", "교실", "캠프", "클리닉",
+]
 
 STADIUM_MAPPING = {
     "어반풋볼파크 부산사상점":        "어반풋볼파크 사상점",
@@ -215,6 +226,17 @@ def is_public_venue_name(stadium_name: str) -> bool:
     return False
 
 
+def is_junk_data(stadium_name: str) -> bool:
+    """오염된 크롤링 데이터 필터: 레슨/교육/이벤트 타이틀 원천 차단"""
+    if not stadium_name:
+        return True
+    name_lower = stadium_name.strip()
+    for kw in JUNK_FILTER_KEYWORDS:
+        if kw in name_lower:
+            return True
+    return False
+
+
 WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
 
 def _date_label(schedule_time: datetime.datetime, now: datetime.datetime) -> str:
@@ -269,6 +291,10 @@ def _parse_plab_match(m: dict, now: datetime.datetime, future_limit: datetime.da
     stadium_group = clean_stadium_group_name(raw_stadium)
     if is_public_venue_name(stadium_group):
         return None
+    if is_junk_data(raw_stadium):
+        return None
+    if stadium_group in NO_RENTAL_STADIUMS:
+        pass  # 소셜매치 데이터는 유지, is_rental만 False로 강제
 
     return {
         "platform":      "PLAB",
@@ -279,9 +305,9 @@ def _parse_plab_match(m: dict, now: datetime.datetime, future_limit: datetime.da
         "price":         f"{m.get('fee', 0):,}원",
         "status":        status,
         "link":                  f"https://www.plabfootball.com/match/{m.get('id')}/",
-        "is_rental":             bool(RENTAL_WHITELIST.get(stadium_group)),
-        "rental_url":            RENTAL_WHITELIST.get(stadium_group, {}).get("rental_url", ""),
-        "rental_platform_label": RENTAL_WHITELIST.get(stadium_group, {}).get("platform_label", ""),
+        "is_rental":             bool(RENTAL_WHITELIST.get(stadium_group)) and stadium_group not in NO_RENTAL_STADIUMS,
+        "rental_url":            RENTAL_WHITELIST.get(stadium_group, {}).get("rental_url", "") if stadium_group not in NO_RENTAL_STADIUMS else "",
+        "rental_platform_label": RENTAL_WHITELIST.get(stadium_group, {}).get("platform_label", "") if stadium_group not in NO_RENTAL_STADIUMS else "",
         "schedule":              schedule_time,
     }
 
@@ -421,18 +447,25 @@ def _parse_plab_page(data: list, resp_json: dict, now: datetime.datetime, days: 
             or ""
         )
 
+        # 오염된 데이터 원천 차단
+        if is_junk_data(raw_stadium):
+            continue
+
+        _sg = clean_stadium_group_name(raw_stadium)
+        _is_rental = bool(RENTAL_WHITELIST.get(_sg)) and _sg not in NO_RENTAL_STADIUMS
+
         matches.append({
             "platform":      "PLAB",
             "stadium":       m.get("label_stadium") or m.get("label_title"),
-            "stadium_group": clean_stadium_group_name(raw_stadium),
+            "stadium_group": _sg,
             "time":          schedule_time.strftime("%m/%d %H:%M"),
             "date_label":    _date_label(schedule_time, now),
             "price":         f"{m.get('fee', 0):,}원",
             "status":        status,
             "link":                  f"https://www.plabfootball.com/match/{m.get('id')}/",
-            "is_rental":             bool(RENTAL_WHITELIST.get(clean_stadium_group_name(raw_stadium))),
-            "rental_url":            RENTAL_WHITELIST.get(clean_stadium_group_name(raw_stadium), {}).get("rental_url", ""),
-            "rental_platform_label": RENTAL_WHITELIST.get(clean_stadium_group_name(raw_stadium), {}).get("platform_label", ""),
+            "is_rental":             _is_rental,
+            "rental_url":            RENTAL_WHITELIST.get(_sg, {}).get("rental_url", "") if _is_rental else "",
+            "rental_platform_label": RENTAL_WHITELIST.get(_sg, {}).get("platform_label", "") if _is_rental else "",
             "schedule":              schedule_time,
         })
 
@@ -567,6 +600,8 @@ async def fetch_urban_day(
             stadium_group = clean_stadium_group_name(stadium)
             if is_public_venue_name(stadium_group):
                 continue
+            if is_junk_data(stadium):
+                continue
 
             apply_li = ul.select_one(".apply")
             status   = "신청가능"
@@ -582,6 +617,8 @@ async def fetch_urban_day(
                     if "마감" in status:
                         price = "마감됨"
 
+            _is_rental = bool(RENTAL_WHITELIST.get(stadium_group)) and stadium_group not in NO_RENTAL_STADIUMS
+
             matches.append({
                 "platform":      "URBAN",
                 "stadium":       stadium,
@@ -591,9 +628,9 @@ async def fetch_urban_day(
                 "price":         price,
                 "status":        status,
                 "link":                  f"https://www.urbanfootball.co.kr/goods/goods_view.html?goods_no={goods_id}",
-                "is_rental":             bool(RENTAL_WHITELIST.get(stadium_group)),
-                "rental_url":            RENTAL_WHITELIST.get(stadium_group, {}).get("rental_url", ""),
-                "rental_platform_label": RENTAL_WHITELIST.get(stadium_group, {}).get("platform_label", ""),
+                "is_rental":             _is_rental,
+                "rental_url":            RENTAL_WHITELIST.get(stadium_group, {}).get("rental_url", "") if _is_rental else "",
+                "rental_platform_label": RENTAL_WHITELIST.get(stadium_group, {}).get("platform_label", "") if _is_rental else "",
                 "schedule":              match_time,
             })
 
@@ -1343,8 +1380,10 @@ async def kakao_oauth_start():
 
 
 @app.get("/api/auth/kakao/callback")
-async def kakao_oauth_callback(code: str = Query(...)):
-    def _err(msg: str) -> HTMLResponse:
+async def kakao_oauth_callback(code: str = Query(...), format: str = Query(None)):
+    def _err(msg: str):
+        if format == "json":
+            raise HTTPException(400, detail=msg)
         msg_j = json.dumps(msg, ensure_ascii=False)
         return HTMLResponse(
             f'<html><head><meta charset="utf-8"></head><body style="font-family:sans-serif;'
@@ -1413,6 +1452,9 @@ async def kakao_oauth_callback(code: str = Query(...)):
         "profile_complete": prev.get("profile_complete", False),
     }
     _VP_SESSIONS[token] = user
+
+    if format == "json":
+        return user
 
     # 4. 팝업 창에서 부모 창으로 postMessage 후 자동 닫기
     user_json = json.dumps(user, ensure_ascii=False)
