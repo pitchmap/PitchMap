@@ -610,6 +610,110 @@
             color: #94a3b8;
             text-align: center;
         }
+
+        /* ── 좌측 패널 ─────────────────────── */
+        #left-panel {
+            position: absolute;
+            top: 104px;
+            left: 0;
+            bottom: 0;
+            width: 280px;
+            background: white;
+            border-right: 1px solid #e2e8f0;
+            box-shadow: 4px 0 16px rgba(0, 0, 0, 0.04);
+            z-index: 22; /* 맵 레이어 위로 완전히 올림으로써 클릭 가능 보장 */
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            gap: 16px;
+            overflow-y: auto;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 모바일 대응 슬라이드 효과 */
+        @media (max-width: 767px) {
+            #left-panel {
+                transform: translateX(-280px);
+                z-index: 35;
+                top: 58px; /* 모바일 탑바 바로 아래에서 시작 */
+                box-shadow: 8px 0 24px rgba(0, 0, 0, 0.15);
+            }
+            #left-panel.open {
+                transform: translateX(0);
+            }
+        }
+
+        /* 좌측 패널 섹션 */
+        .lp-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* 라벨 디자인 */
+        .lp-label {
+            font-size: 11px;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        /* 셀렉트 박스 & 인풋 */
+        .lp-select {
+            width: 100%;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 9px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #334155;
+            background: #f8fafc;
+            outline: none;
+            transition: all 0.15s ease;
+        }
+
+        .lp-select:focus {
+            border-color: #2563eb;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        /* 플랫폼 토글 버튼 그룹 */
+        .platform-toggle {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .platform-toggle-btn {
+            border: none;
+            background: transparent;
+            padding: 8px 0;
+            font-size: 11px;
+            font-weight: 800;
+            color: #64748b;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s ease;
+        }
+
+        .platform-toggle-btn:hover {
+            color: #334155;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .platform-toggle-btn.active {
+            background: white;
+            color: #2563eb;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        }
     </style>
 </head>
 

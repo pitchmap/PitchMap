@@ -1409,7 +1409,7 @@ async def kakao_oauth_callback(code: str = Query(...), format: str = Query(None)
             timeout=10,
         )
     if tr.status_code != 200:
-        return _err("토큰 발급 실패")
+        return _err(f"토큰 발급 실패 (상태코드: {tr.status_code}, 상세: {tr.text})")
     access_token = tr.json().get("access_token", "")
 
     # 2. 액세스 토큰 → 사용자 정보
@@ -1420,7 +1420,7 @@ async def kakao_oauth_callback(code: str = Query(...), format: str = Query(None)
             timeout=10,
         )
     if mr.status_code != 200:
-        return _err("사용자 정보 조회 실패")
+        return _err(f"사용자 정보 조회 실패 (상태코드: {mr.status_code}, 상세: {mr.text})")
 
     me       = mr.json()
     kakao_id = str(me["id"])

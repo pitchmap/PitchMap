@@ -1787,6 +1787,9 @@ window.VenuePlatform = (function () {
         const code = sp.get('code');
         if (code) {
             window.history.replaceState({}, document.title, '/');
+            if (_user && _user.token) {
+                return; // 이미 로그인 세션이 있으면 무시 (인가 코드 중복 사용으로 인한 invalid_grant 방지)
+            }
             try {
                 const res = await fetch(`${_base()}/api/auth/kakao/callback?code=${code}&format=json`);
                 if (!res.ok) {
@@ -1812,9 +1815,12 @@ window.VenuePlatform = (function () {
                     if ($('vp-tab-body')) _loadTab(_activeTab);
                 }
 
-                // 팝업 창 안에서 이 코드가 실행되었다면 부모 창에 성공 메시지를 보내고 창 닫기
-                if (window.opener && !window.opener.closed) {
-                    window.opener.postMessage({ type: 'KAKAO_LOGIN_DONE', user }, '*');
+                // 팝업 창 안에서 이 코드가 실행되었다면
+                const isPopup = window.name === 'kakao_login' || (window.opener && window.opener !== window);
+                if (isPopup) {
+                    if (window.opener && !window.opener.closed) {
+                        window.opener.postMessage({ type: 'KAKAO_LOGIN_DONE', user }, '*');
+                    }
                     window.close();
                 }
                 return;
@@ -2440,6 +2446,33 @@ window.VenuePlatform = (function () {
             }
         } else if (e.data.type === 'KAKAO_LOGIN_ERR') {
             alert(`카카오 로그인 오류: ${e.data.msg || '다시 시도해 주세요.'}`);
+        }
+    });
+
+    // ── localStorage 동기화 수신 (window.opener 유실 시 대응) ───
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'pm_user' && e.newValue) {
+            try {
+                const user = JSON.parse(e.newValue);
+                if (!user?.token) return;
+                _user = user;
+                closeLoginModal();
+                _syncTopbarBtn();
+
+                if (!user.profile_complete) {
+                    const greet = $('pm-profile-greet');
+                    if (greet) greet.textContent = `${user.nickname}님, 환영해요! 🎉`;
+                    const av = $('pm-profile-avatar');
+                    if (av && user.avatar) { av.src = user.avatar; av.style.display = 'inline-block'; }
+                    const nickEl = $('pm-profile-nick');
+                    if (nickEl) nickEl.value = user.nickname || '';
+                    const modal = $('pm-profile-modal');
+                    if (modal) modal.style.display = 'flex';
+                } else {
+                    _renderUserBar();
+                    if ($('vp-tab-body')) _loadTab(_activeTab);
+                }
+            } catch (err) {}
         }
     });
 
