@@ -124,6 +124,26 @@ def _check_rate_limit(client_ip: str) -> bool:
     _rate_buckets[client_ip].append(now)
     return True
 
+# 대관 가능 구장 화이트리스트 — 플랩/어반 공식 예약 페이지 연결
+# 이 목록에 없는 PLAB/URBAN 구장은 소셜매치 전용 → is_rental: False
+RENTAL_WHITELIST: dict[str, dict] = {
+    # ── 어반풋볼 대관 파트너 ─────────────────────────────────────
+    "어반풋볼파크 사상점":        {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
+    "어반풋볼파크 부산진구점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
+    "어반풋볼파크 부산강서1호점": {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
+    "어반풋볼파크 부산강서2호점": {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
+    "어반풋볼파크 동래금정점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
+    "어반풋볼파크 부산북구점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
+    "어반풋볼파크 양산점":        {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
+    "HM풋살파크 창원점":          {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
+    "BJ풋살파크 마산점":          {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium.html"},
+    # ── 플랩풋볼 대관 파트너 ─────────────────────────────────────
+    "스포풋살파크":               {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/"},
+    "센텀풋살장":                 {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/"},
+    "레인보우풋살파크 사하":      {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/"},
+    "BS89 연산":                  {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/"},
+}
+
 STADIUM_MAPPING = {
     "어반풋볼파크 부산사상점":        "어반풋볼파크 사상점",
     "어반풋볼파크 부산진구점":        "어반풋볼파크 부산진구점",
@@ -258,9 +278,11 @@ def _parse_plab_match(m: dict, now: datetime.datetime, future_limit: datetime.da
         "date_label":    date_label,
         "price":         f"{m.get('fee', 0):,}원",
         "status":        status,
-        "link":          f"https://www.plabfootball.com/match/{m.get('id')}/",
-        "is_rental":     True,
-        "schedule":      schedule_time,
+        "link":                  f"https://www.plabfootball.com/match/{m.get('id')}/",
+        "is_rental":             bool(RENTAL_WHITELIST.get(stadium_group)),
+        "rental_url":            RENTAL_WHITELIST.get(stadium_group, {}).get("rental_url", ""),
+        "rental_platform_label": RENTAL_WHITELIST.get(stadium_group, {}).get("platform_label", ""),
+        "schedule":              schedule_time,
     }
 
 
@@ -407,9 +429,11 @@ def _parse_plab_page(data: list, resp_json: dict, now: datetime.datetime, days: 
             "date_label":    _date_label(schedule_time, now),
             "price":         f"{m.get('fee', 0):,}원",
             "status":        status,
-            "link":          f"https://www.plabfootball.com/match/{m.get('id')}/",
-            "is_rental":     True,
-            "schedule":      schedule_time,
+            "link":                  f"https://www.plabfootball.com/match/{m.get('id')}/",
+            "is_rental":             bool(RENTAL_WHITELIST.get(clean_stadium_group_name(raw_stadium))),
+            "rental_url":            RENTAL_WHITELIST.get(clean_stadium_group_name(raw_stadium), {}).get("rental_url", ""),
+            "rental_platform_label": RENTAL_WHITELIST.get(clean_stadium_group_name(raw_stadium), {}).get("platform_label", ""),
+            "schedule":              schedule_time,
         })
 
     should_stop = not bool(resp_json.get("next"))
@@ -566,9 +590,11 @@ async def fetch_urban_day(
                 "date_label":    _date_label(match_time, now),
                 "price":         price,
                 "status":        status,
-                "link":          f"https://www.urbanfootball.co.kr/goods/goods_view.html?goods_no={goods_id}",
-                "is_rental":     True,
-                "schedule":      match_time,
+                "link":                  f"https://www.urbanfootball.co.kr/goods/goods_view.html?goods_no={goods_id}",
+                "is_rental":             bool(RENTAL_WHITELIST.get(stadium_group)),
+                "rental_url":            RENTAL_WHITELIST.get(stadium_group, {}).get("rental_url", ""),
+                "rental_platform_label": RENTAL_WHITELIST.get(stadium_group, {}).get("platform_label", ""),
+                "schedule":              match_time,
             })
 
     except Exception as e:
@@ -786,25 +812,29 @@ def get_public_dummy_matches(now: datetime.datetime, region: str) -> list:
         "booking_method": "온라인",
         "phone":          None,
         "notes":          "전국 800여개 풋살·축구장 즉시 예약. 앱/웹 모두 가능.",
-        "is_rental":      True,
-        "schedule":       dummy_time,
+        "is_rental":             True,
+        "rental_url":            f"https://www.iamground.kr/futsal/search?city={iag_city}",
+        "rental_platform_label": "아이엠그라운드",
+        "schedule":              dummy_time,
     })
 
     for (full_name, group_name, method, url, phone, notes) in entries:
         matches.append({
-            "platform":       "PUBLIC",
-            "stadium":        full_name,
-            "stadium_group":  group_name,
-            "time":           "대관 가능",
-            "date_label":     "상시 대관",
-            "price":          "대관료 확인",
-            "status":         "대관 가능",
-            "link":           url,
-            "booking_method": method,
-            "phone":          phone,
-            "notes":          notes,
-            "is_rental":      True,
-            "schedule":       dummy_time,
+            "platform":              "PUBLIC",
+            "stadium":               full_name,
+            "stadium_group":         group_name,
+            "time":                  "대관 가능",
+            "date_label":            "상시 대관",
+            "price":                 "대관료 확인",
+            "status":                "대관 가능",
+            "link":                  url,
+            "booking_method":        method,
+            "phone":                 phone,
+            "notes":                 notes,
+            "is_rental":             True,
+            "rental_url":            url,
+            "rental_platform_label": "공공예약",
+            "schedule":              dummy_time,
         })
 
     return matches
@@ -836,10 +866,12 @@ def get_plab_dummy_matches(now: datetime.datetime, region: str) -> list:
             "time":          match_time.strftime("%m/%d %H:%M"),
             "date_label":    _date_label(match_time, now),
             "price":         "10,000원",
-            "status":        "신청가능" if i % 3 != 2 else "마감임박",
-            "link":          "https://www.plabfootball.com/",
-            "is_rental":     True,
-            "schedule":      match_time,
+            "status":                "신청가능" if i % 3 != 2 else "마감임박",
+            "link":                  "https://www.plabfootball.com/",
+            "is_rental":             False,
+            "rental_url":            "",
+            "rental_platform_label": "",
+            "schedule":              match_time,
         })
     return matches
 
@@ -1312,8 +1344,21 @@ async def kakao_oauth_start():
 
 @app.get("/api/auth/kakao/callback")
 async def kakao_oauth_callback(code: str = Query(...)):
-    def _err(msg: str):
-        return RedirectResponse(f"/?{urlencode({'pm_kakao_err': msg})}", status_code=302)
+    def _err(msg: str) -> HTMLResponse:
+        msg_j = json.dumps(msg, ensure_ascii=False)
+        return HTMLResponse(
+            f'<html><head><meta charset="utf-8"></head><body style="font-family:sans-serif;'
+            f'text-align:center;padding:60px;background:#fef2f2;">'
+            f'<p style="font-size:2rem;margin-bottom:12px;">⚠️</p>'
+            f'<p style="font-weight:700;color:#dc2626;margin-bottom:6px;">로그인 오류</p>'
+            f'<p style="font-size:13px;color:#64748b;">{msg}</p>'
+            f'<script>'
+            f'if(window.opener&&!window.opener.closed){{'
+            f'window.opener.postMessage({{type:"KAKAO_LOGIN_ERR",msg:{msg_j}}},"*");'
+            f'}}'
+            f'setTimeout(function(){{window.close();}},2000);'
+            f'</script></body></html>'
+        )
 
     # 1. 인가 코드 → 액세스 토큰
     async with httpx.AsyncClient() as cl:
@@ -1369,17 +1414,38 @@ async def kakao_oauth_callback(code: str = Query(...)):
     }
     _VP_SESSIONS[token] = user
 
-    # 4. 메인 페이지로 리다이렉트 — URL 파라미터로 사용자 정보 전달
-    params: dict = {
-        "pm_token": token,
-        "pm_nick":  nickname,
-        "pm_kid":   kakao_id,
-        "pm_new":   "1" if is_new else "0",
-        "pm_pc":    "1" if user["profile_complete"] else "0",
-    }
-    if avatar:
-        params["pm_av"] = avatar
-    return RedirectResponse(f"/?{urlencode(params)}", status_code=302)
+    # 4. 팝업 창에서 부모 창으로 postMessage 후 자동 닫기
+    user_json = json.dumps(user, ensure_ascii=False)
+    return HTMLResponse(f"""<!doctype html>
+<html><head><meta charset="utf-8"><title>카카오 로그인</title>
+<style>*{{margin:0;padding:0;box-sizing:border-box;}}
+body{{font-family:'Apple SD Gothic Neo',sans-serif;background:#f8fafc;
+     display:flex;align-items:center;justify-content:center;min-height:100vh;}}
+.card{{background:white;border-radius:24px;padding:40px 32px;text-align:center;
+       box-shadow:0 20px 60px rgba(0,0,0,0.12);max-width:280px;width:90%;}}
+</style></head>
+<body>
+<div class="card">
+  <div style="font-size:3rem;margin-bottom:16px;">⚽</div>
+  <p style="font-weight:900;font-size:18px;color:#1e293b;margin-bottom:8px;">카카오 로그인 완료!</p>
+  <p style="font-size:13px;color:#94a3b8;">잠시 후 창이 닫힙니다...</p>
+</div>
+<script>
+(function(){{
+  var u={user_json};
+  try{{
+    if(window.opener&&!window.opener.closed){{
+      window.opener.postMessage({{type:'KAKAO_LOGIN_DONE',user:u}},'*');
+    }}else{{
+      localStorage.setItem('pm_user',JSON.stringify(u));
+      window.location.replace('/');
+      return;
+    }}
+  }}catch(e){{}}
+  setTimeout(function(){{window.close();}},1500);
+}})();
+</script>
+</body></html>""")
 
 
 # ── 프로필 업데이트 (카카오 로그인 후 지역·포지션 설정) ─────────

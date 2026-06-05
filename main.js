@@ -183,6 +183,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     viewToggleBtn.addEventListener('click', () => setListView(!isListView));
 
+    // 플랫폼 필터: 클라이언트 측 즉시 반영
+    document.getElementById('platform-filter')?.addEventListener('change', () => {
+        applyFilters();
+        if (isListView) renderListView();
+    });
+    // 날짜 기간 필터: 새 API 요청 필요
+    document.getElementById('days-filter')?.addEventListener('change', () => {
+        if (mapInitialized) fetchMatchData();
+    });
+
     // ── 통계 ──────────────────────────────────────────────────
     function updateStats() {
         const m = allLoadedMatches;
@@ -861,9 +871,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         panelStadium.innerHTML = `${stadiumData.name}${distText}`;
 
-        // 대관 가능 배지 — panel-stadium 바로 아래에 삽입
+        // 대관 배지 + 아웃링크 버튼 — panel-stadium 바로 아래 삽입
         document.getElementById('_panel-rental-badge')?.remove();
+        document.getElementById('_panel-rental-btn')?.remove();
         if (isRental) {
+            // 배지
             const b = document.createElement('span');
             b.id = '_panel-rental-badge';
             b.style.cssText = 'display:inline-flex;align-items:center;gap:3px;margin-top:4px;'
@@ -871,6 +883,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 + 'padding:2px 9px;border-radius:99px;border:1px solid #86efac;';
             b.textContent = '✓ 대관 가능';
             panelStadium.insertAdjacentElement('afterend', b);
+
+            // 대관 아웃링크 버튼 (rental_url 또는 PUBLIC link)
+            const rentalMatch = stadiumData.matches.find(m => m.is_rental && m.rental_url);
+            if (rentalMatch) {
+                const label = rentalMatch.rental_platform_label
+                    ? `${rentalMatch.rental_platform_label}로 대관하러 가기 →`
+                    : '예약 페이지 바로가기 →';
+                const link = document.createElement('a');
+                link.id     = '_panel-rental-btn';
+                link.href   = rentalMatch.rental_url;
+                link.target = '_blank';
+                link.rel    = 'noopener';
+                link.style.cssText = 'display:block;margin-top:8px;padding:8px 14px;'
+                    + 'background:#2563eb;color:white;border-radius:10px;font-size:12px;'
+                    + 'font-weight:800;text-decoration:none;text-align:center;'
+                    + 'transition:opacity 0.18s;';
+                link.textContent = label;
+                link.addEventListener('mouseover', () => link.style.opacity = '0.85');
+                link.addEventListener('mouseout',  () => link.style.opacity = '1');
+                b.insertAdjacentElement('afterend', link);
+            }
         }
 
         refreshFavBtn(stadiumData.name);
@@ -1619,10 +1652,18 @@ window.VenuePlatform = (function () {
     function openLoginModal()  { const m=$('pm-login-modal'); if(m) m.style.display='flex'; }
     function closeLoginModal() { const m=$('pm-login-modal'); if(m) m.style.display='none'; }
 
-    // ── 카카오 로그인 — 풀페이지 리다이렉트 방식 ─────────────────
+    // ── 카카오 로그인 — 팝업 방식 (postMessage로 부모창 동기화) ───
     function openKakaoLogin() {
         closeLoginModal();
-        window.location.href = `${_base()}/api/auth/kakao/login`;
+        const popup = window.open(
+            `${_base()}/api/auth/kakao/login`,
+            'kakao_login',
+            'width=520,height=720,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no'
+        );
+        // 팝업 차단 시 전체 페이지 리다이렉트로 폴백
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+            window.location.href = `${_base()}/api/auth/kakao/login`;
+        }
     }
 
     // ── URL 파라미터로 돌아온 Kakao 콜백 처리 ───────────────────
@@ -2234,19 +2275,24 @@ window.VenuePlatform = (function () {
             closeLoginModal();
             _syncTopbarBtn();
 
-            if (!user.region) {
-                // 지역 미설정 → 프로필 설정 모달 열기
+            if (!user.profile_complete) {
+                // 프로필 미완성 → 설정 모달 열기 (닉네임·아바타 자동 세팅)
+                const isNew = !user.region && !user.skill;
                 const greet = $('pm-profile-greet');
-                if (greet) greet.textContent = `${user.nickname}님, 환영해요!`;
+                if (greet) greet.textContent = isNew
+                    ? `${user.nickname}님, 환영해요! 🎉`
+                    : `${user.nickname}님, 프로필을 완성해 주세요`;
                 const av = $('pm-profile-avatar');
                 if (av && user.avatar) { av.src = user.avatar; av.style.display = 'inline-block'; }
+                const nickEl = $('pm-profile-nick');
+                if (nickEl) nickEl.value = user.nickname || '';
                 const modal = $('pm-profile-modal');
                 if (modal) modal.style.display = 'flex';
             } else {
                 _renderUserBar();
                 if ($('vp-tab-body')) _loadTab(_activeTab);
             }
-        } else if (e.data.type === 'KAKAO_ERR') {
+        } else if (e.data.type === 'KAKAO_LOGIN_ERR') {
             alert(`카카오 로그인 오류: ${e.data.msg || '다시 시도해 주세요.'}`);
         }
     });
