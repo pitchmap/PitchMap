@@ -627,6 +627,51 @@ document.addEventListener('DOMContentLoaded', () => {
         '청주종합운동장':        '청주종합운동장 풋살',
     };
 
+    // ── 정밀 좌표 하드코딩 테이블 (카카오 검색 오차 방지) ──────
+    // 출처: 위키백과·국토정보플랫폼·visitkorea 검증 좌표
+    const VENUE_HARDCOORDS = {
+        // 서울
+        '잠실종합운동장':    { lat: 37.5155, lng: 127.0731 },
+        '어린이대공원':      { lat: 37.5482, lng: 127.0816 },
+        '보라매공원':        { lat: 37.4942, lng: 126.9237 },
+        '뚝섬한강공원':      { lat: 37.5313, lng: 127.0626 },
+        '난지한강공원':      { lat: 37.5713, lng: 126.8919 },
+        // 경기/인천
+        '탄천종합운동장':    { lat: 37.3716, lng: 127.1109 },
+        '수원월드컵경기장':  { lat: 37.2940, lng: 127.0092 },
+        '인천아시아드':      { lat: 37.5676, lng: 126.6748 },
+        '송도풋살공원':      { lat: 37.3840, lng: 126.6541 },
+        // 부산
+        '구덕운동장':        { lat: 35.1165, lng: 129.0145 },
+        '스포원파크':        { lat: 35.2891, lng: 129.1070 },
+        '화명생태공원':      { lat: 35.2305, lng: 129.0041 },
+        '삼락생태공원':      { lat: 35.1657, lng: 128.9738 },
+        '대저생태공원':      { lat: 35.2165, lng: 128.9543 },
+        '황령산레포츠공원':  { lat: 35.1576, lng: 129.0762 },
+        '백운포체육공원':    { lat: 35.1028, lng: 129.1099 },  // 부산 남구 용호동
+        '을숙도생태공원':    { lat: 35.0876, lng: 128.9768 },
+        '부산시민공원':      { lat: 35.1663, lng: 129.0445 },
+        '민락수변공원':      { lat: 35.1536, lng: 129.1244 },
+        '일광체육공원':      { lat: 35.2749, lng: 129.2170 },
+        // 경남
+        '양산디자인공원':    { lat: 35.3226, lng: 129.0004 },  // 물금읍 백호로 23
+        '양산수질정화공원':  { lat: 35.3071, lng: 129.0225 },  // 강변로 54
+        // 울산
+        '문수축구경기장':    { lat: 35.5196, lng: 129.2936 },
+        // 대구
+        '대구스타디움':      { lat: 35.8397, lng: 128.6833 },
+        // 광주
+        '상무시민공원':      { lat: 35.1533, lng: 126.8441 },
+        // 대전
+        '대전월드컵경기장':  { lat: 36.3957, lng: 127.3345 },
+        // 제주
+        '제주월드컵경기장':  { lat: 33.4747, lng: 126.4997 },
+        // 강원
+        '강릉올림픽파크':    { lat: 37.6387, lng: 128.7177 },
+        // 전북
+        '전주월드컵경기장':  { lat: 35.8197, lng: 127.1331 },
+    };
+
     // stadium.name 에서 SPECIAL_VENUE_MAP 키가 포함되면 매핑된 검색어 반환
     function _specialVenueKeyword(name) {
         for (const [key, mapped] of Object.entries(SPECIAL_VENUE_MAP)) {
@@ -671,6 +716,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 웹 플랫폼 PUBLIC → 마커 생략 (물리 위치 없음)
         if (WEB_PLATFORM_VENUES.has(stadium.name)) return;
+
+        // 하드코딩 좌표 우선 — 검색 오차 없이 정확한 위치 사용
+        for (const [key, coord] of Object.entries(VENUE_HARDCOORDS)) {
+            if (stadium.name.includes(key)) {
+                cb(new kakao.maps.LatLng(coord.lat, coord.lng));
+                return;
+            }
+        }
 
         const emit = (lat, lng, next) => {
             const fLat = parseFloat(lat), fLng = parseFloat(lng);
@@ -742,22 +795,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const cfg   = PLATFORM_CFG[platform] || PLATFORM_CFG.MIXED;
         const count = stadiumData.matches.length;
         const isFav = favorites.has(stadiumData.name);
+        const isRentalVenue = stadiumData.matches.some(m => m.is_rental === true);
 
         const el = document.createElement('div');
         el.style.cssText = `
             position:relative; width:46px; height:46px;
             display:flex; flex-direction:column; align-items:center; justify-content:center;
-            background:${cfg.bg}; border:2.5px solid ${cfg.border}; border-radius:50%;
-            cursor:pointer; box-shadow:0 3px 12px rgba(0,0,0,0.28);
+            background:${cfg.bg}; border:${isRentalVenue ? '3px solid #10b981' : `2.5px solid ${cfg.border}`}; border-radius:50%;
+            cursor:pointer; box-shadow:${isRentalVenue ? '0 3px 14px rgba(16,185,129,0.45)' : '0 3px 12px rgba(0,0,0,0.28)'};
             color:white; font-family:'Pretendard',sans-serif;
             transition:transform 0.15s ease, box-shadow 0.15s ease; user-select:none;`;
         el.innerHTML = `
             <span style="font-weight:800;font-size:14px;line-height:1.1;">${cfg.label}</span>
             <span style="font-size:9px;opacity:0.85;line-height:1.2;font-weight:600;">${count}건</span>
-            ${isFav ? '<span style="position:absolute;top:-4px;right:-4px;font-size:11px;background:white;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.2);">★</span>' : ''}`;
+            ${isFav ? '<span style="position:absolute;top:-4px;right:-4px;font-size:11px;background:white;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.2);">★</span>' : ''}
+            ${isRentalVenue ? '<span style="position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:900;background:#10b981;color:white;padding:1px 5px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.25);letter-spacing:0.2px;">대관</span>' : ''}`;
 
-        el.addEventListener('mouseenter', () => { el.style.transform='scale(1.18)'; el.style.boxShadow='0 5px 18px rgba(0,0,0,0.38)'; });
-        el.addEventListener('mouseleave', () => { el.style.transform='scale(1)';    el.style.boxShadow='0 3px 12px rgba(0,0,0,0.28)'; });
+        el.addEventListener('mouseenter', () => { el.style.transform='scale(1.18)'; el.style.boxShadow= isRentalVenue ? '0 6px 20px rgba(16,185,129,0.55)' : '0 5px 18px rgba(0,0,0,0.38)'; });
+        el.addEventListener('mouseleave', () => { el.style.transform='scale(1)';    el.style.boxShadow= isRentalVenue ? '0 3px 14px rgba(16,185,129,0.45)' : '0 3px 12px rgba(0,0,0,0.28)'; });
         el.addEventListener('click', () => {
             showSidePanel(stadiumData);
             map.panTo(position);
@@ -790,7 +845,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── 사이드 패널 표시 ──────────────────────────────────────
     function showSidePanel(stadiumData) {
         currentPanelStadium = stadiumData.name;
-        
+        const isRental = stadiumData.matches.some(m => m.is_rental === true);
+
         let distText = '';
         if (userCoords) {
             const markerObj = markerIndex.get(stadiumData.name);
@@ -804,14 +860,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         panelStadium.innerHTML = `${stadiumData.name}${distText}`;
+
+        // 대관 가능 배지 — panel-stadium 바로 아래에 삽입
+        document.getElementById('_panel-rental-badge')?.remove();
+        if (isRental) {
+            const b = document.createElement('span');
+            b.id = '_panel-rental-badge';
+            b.style.cssText = 'display:inline-flex;align-items:center;gap:3px;margin-top:4px;'
+                + 'font-size:10px;font-weight:800;color:#15803d;background:#dcfce7;'
+                + 'padding:2px 9px;border-radius:99px;border:1px solid #86efac;';
+            b.textContent = '✓ 대관 가능';
+            panelStadium.insertAdjacentElement('afterend', b);
+        }
+
         refreshFavBtn(stadiumData.name);
         renderMatchList(stadiumData);
         openPanel();
-        // 구장 매칭판 로드 (VenuePlatform 모듈이 준비된 경우)
-        if (window.VenuePlatform) {
-            const isRental = stadiumData.matches.some(m => m.is_rental === true);
-            window.VenuePlatform.load(stadiumData.name, isRental);
-        }
+        if (window.VenuePlatform) window.VenuePlatform.load(stadiumData.name, isRental);
     }
 
     // ── 날짜 세그먼트를 container(Element)에 렌더링 ──────────
@@ -1554,6 +1619,41 @@ window.VenuePlatform = (function () {
     function openLoginModal()  { const m=$('pm-login-modal'); if(m) m.style.display='flex'; }
     function closeLoginModal() { const m=$('pm-login-modal'); if(m) m.style.display='none'; }
 
+    // ── 카카오 로그인 팝업 ───────────────────────────────────────
+    function openKakaoLogin() {
+        closeLoginModal();
+        const popup = window.open(
+            `${_base()}/api/auth/kakao/login`,
+            'kakao_login',
+            'width=520,height=720,scrollbars=yes,resizable=yes'
+        );
+        if (!popup) alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.');
+    }
+
+    // ── 카카오 로그인 후 지역·포지션 설정 ───────────────────────
+    async function submitProfile() {
+        if (!_user) return;
+        const region = $('pm-profile-region')?.value;
+        const pos    = $('pm-profile-pos')?.value || '올포지션';
+        if (!region) return alert('활동 지역을 선택해 주세요.');
+        _user.region   = region;
+        _user.position = pos;
+        try {
+            const res = await fetch(`${_base()}/api/auth/me`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({token: _user.token, region, position: pos}),
+            });
+            if (res.ok) { const { data } = await res.json(); _user = data; }
+        } catch {}
+        localStorage.setItem('pm_user', JSON.stringify(_user));
+        const m = $('pm-profile-modal');
+        if (m) m.style.display = 'none';
+        _syncTopbarBtn();
+        _renderUserBar();
+        if ($('vp-tab-body')) _loadTab(_activeTab);
+    }
+
     async function submitLogin() {
         const nick = v('pm-login-nick'), region = v('pm-login-region'),
               pos  = v('pm-login-pos');
@@ -1638,28 +1738,47 @@ window.VenuePlatform = (function () {
 
     function _renderUserBar() {
         const el = $('vp-user-bar'); if (!el) return;
-        const loginLabel = _isRental ? '간편 로그인 후 매칭 참여하기' : '로그인 후 리뷰 남기기';
-        el.innerHTML = _user
-            ? `<div style="display:flex;align-items:center;justify-content:space-between;
+        if (_user) {
+            const avatarHtml = _user.avatar
+                ? `<img src="${_user.avatar}" width="28" height="28"
+                        style="border-radius:50%;object-fit:cover;border:2px solid #FEE500;flex-shrink:0;"
+                        onerror="this.style.display='none'">`
+                : `<span style="font-size:11px;background:#2563eb;color:#fff;
+                               padding:2px 8px;border-radius:99px;font-weight:800;flex-shrink:0;">
+                     ${_user.position || '올포지션'}
+                   </span>`;
+            const kakaoTag = _user.kakao_id
+                ? `<span style="font-size:9px;background:#FEE500;color:#3C1E1E;
+                               padding:1px 5px;border-radius:3px;font-weight:800;">K</span>`
+                : '';
+            el.innerHTML = `
+              <div style="display:flex;align-items:center;justify-content:space-between;
                            background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:8px 12px;">
-                 <div style="display:flex;align-items:center;gap:6px;">
-                   <span style="font-size:11px;background:#2563eb;color:#fff;
-                                padding:2px 8px;border-radius:99px;font-weight:800;">
-                     ${_user.position}
-                   </span>
-                   <span style="font-size:13px;font-weight:800;">${_user.nickname}</span>
-                   <span style="font-size:11px;color:#64748b;">${_user.region}</span>
-                 </div>
-                 <button onclick="VenuePlatform._logout()"
-                   style="font-size:11px;color:#94a3b8;border:none;background:none;cursor:pointer;">
-                   로그아웃
-                 </button>
-               </div>`
-            : `<button onclick="VenuePlatform.openLoginModal()"
-                 style="width:100%;padding:10px;background:#2563eb;color:#fff;border:none;
-                        border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;">
-                 ${loginLabel}
-               </button>`;
+                <div style="display:flex;align-items:center;gap:6px;">
+                  ${avatarHtml}
+                  <span style="font-size:13px;font-weight:800;">${_user.nickname}</span>
+                  ${kakaoTag}
+                  <span style="font-size:11px;color:#64748b;">${_user.region || ''}</span>
+                </div>
+                <button onclick="VenuePlatform._logout()"
+                  style="font-size:11px;color:#94a3b8;border:none;background:none;cursor:pointer;">
+                  로그아웃
+                </button>
+              </div>`;
+        } else {
+            el.innerHTML = `
+              <button onclick="VenuePlatform.openKakaoLogin()"
+                style="width:100%;padding:10px 14px;background:#FEE500;color:#3C1E1E;border:none;
+                       border-radius:10px;font-weight:900;font-size:13px;cursor:pointer;
+                       display:flex;align-items:center;justify-content:center;gap:6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" style="flex-shrink:0;">
+                  <path fill="#3C1E1E" d="M12 3C6.48 3 2 6.93 2 11.75c0 3.08 1.74 5.79
+                  4.36 7.34L5.25 22.5l4.56-2.48A10.5 10.5 0 0 0 12 20.5c5.52 0
+                  10-3.93 10-8.75S17.52 3 12 3z"/>
+                </svg>
+                ${_isRental ? '카카오로 1초 로그인 후 매칭 참여' : '카카오로 1초 로그인 후 리뷰 남기기'}
+              </button>`;
+        }
     }
 
     function _switchTab(tab) {
@@ -1686,11 +1805,25 @@ window.VenuePlatform = (function () {
                                                font-weight:800;background:${bg};color:${c};">${txt}</span>`;
     const _fmt   = iso => { try { return new Date(iso).toLocaleString('ko-KR',
         {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}); } catch { return iso; } };
-    const _loginBtn = (label,bg) =>
-        `<button onclick="VenuePlatform.openLoginModal()"
-           style="width:100%;padding:9px;background:${bg};color:#fff;border:none;
-                  border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;
-                  margin-bottom:12px;">${label}</button>`;
+    const _loginBtn = (label) =>
+        `<div style="background:#fefce8;border:1.5px dashed #fde68a;border-radius:12px;
+                     padding:14px;margin-bottom:12px;text-align:center;">
+           <p style="font-size:12px;font-weight:800;color:#92400e;margin:0 0 10px;">
+             카카오 로그인이 필요한 서비스입니다
+           </p>
+           <p style="font-size:11px;color:#b45309;margin:0 0 10px;">${label}</p>
+           <button onclick="VenuePlatform.openKakaoLogin()"
+             style="width:100%;padding:10px 14px;background:#FEE500;color:#3C1E1E;border:none;
+                    border-radius:8px;font-weight:900;font-size:13px;cursor:pointer;
+                    display:flex;align-items:center;justify-content:center;gap:6px;">
+             <svg width="16" height="16" viewBox="0 0 24 24" style="flex-shrink:0;">
+               <path fill="#3C1E1E" d="M12 3C6.48 3 2 6.93 2 11.75c0 3.08 1.74 5.79
+               4.36 7.34L5.25 22.5l4.56-2.48A10.5 10.5 0 0 0 12 20.5c5.52 0
+               10-3.93 10-8.75S17.52 3 12 3z"/>
+             </svg>
+             카카오로 1초 로그인
+           </button>
+         </div>`;
     const _empty = txt => `<p style="text-align:center;color:#94a3b8;font-size:13px;
                                       padding:16px 0;">${txt}</p>`;
 
@@ -1723,7 +1856,7 @@ window.VenuePlatform = (function () {
                      border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
               팀 매칭 등록
             </button>
-          </div>` : _loginBtn('로그인 후 팀 매칭 신청하기', '#059669');
+          </div>` : _loginBtn('팀 매칭 신청, 조건 제시, 상대팀 연결 기능');
 
         const list = !data.length ? _empty('등록된 팀 매칭이 없습니다') :
             data.map(m => _card(`
@@ -1777,7 +1910,7 @@ window.VenuePlatform = (function () {
                      border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
               용병 모집 등록
             </button>
-          </div>` : _loginBtn('로그인 후 용병 모집 등록하기', '#7c3aed');
+          </div>` : _loginBtn('개인 용병 모집 글 등록 및 참가 신청 기능');
 
         const list = !data.length ? _empty('모집 중인 용병 공고가 없습니다') :
             data.map(m => {
@@ -1891,7 +2024,7 @@ window.VenuePlatform = (function () {
                      border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
               리뷰 등록
             </button>
-          </div>` : _loginBtn('로그인 후 리뷰 남기기', '#f59e0b');
+          </div>` : _loginBtn('잔디 상태 및 매너 평점 리뷰 작성 기능');
 
         const list = !data.length ? _empty('첫 번째 리뷰를 남겨보세요!') :
             data.map(r => _card(`
@@ -1944,7 +2077,11 @@ window.VenuePlatform = (function () {
         const label = $('pm-topbar-login-label');
         if (!btn || !label) return;
         if (_user) {
-            label.textContent = _user.nickname;
+            // 카카오 유저: 노란 K 배지 + 닉네임
+            const kTag = _user.kakao_id
+                ? '<span style="font-size:9px;background:#FEE500;color:#3C1E1E;padding:1px 4px;border-radius:3px;font-weight:900;margin-right:3px;">K</span>'
+                : '';
+            label.innerHTML = `${kTag}${_user.nickname}`;
             btn.style.color       = '#059669';
             btn.style.borderColor = '#a7f3d0';
             btn.style.background  = '#f0fdf4';
@@ -1969,6 +2106,9 @@ window.VenuePlatform = (function () {
         $('pm-login-modal')?.addEventListener('click', e => {
             if (e.target === $('pm-login-modal')) closeLoginModal();
         });
+        $('pm-profile-modal')?.addEventListener('click', e => {
+            if (e.target === $('pm-profile-modal')) $('pm-profile-modal').style.display = 'none';
+        });
 
         // 첫 방문 & 미로그인 시 3초 후 로그인 유도
         if (!_user && !localStorage.getItem('pm_login_prompted')) {
@@ -1979,7 +2119,37 @@ window.VenuePlatform = (function () {
         }
     });
 
+    // ── 카카오 팝업 → postMessage 수신 ──────────────────────────
+    window.addEventListener('message', function(e) {
+        if (!e.data || typeof e.data !== 'object') return;
+
+        if (e.data.type === 'KAKAO_LOGIN_DONE') {
+            const user = e.data.user;
+            if (!user?.token) return;
+            _user = user;
+            localStorage.setItem('pm_user', JSON.stringify(user));
+            closeLoginModal();
+            _syncTopbarBtn();
+
+            if (!user.region) {
+                // 지역 미설정 → 프로필 설정 모달 열기
+                const greet = $('pm-profile-greet');
+                if (greet) greet.textContent = `${user.nickname}님, 환영해요!`;
+                const av = $('pm-profile-avatar');
+                if (av && user.avatar) { av.src = user.avatar; av.style.display = 'inline-block'; }
+                const modal = $('pm-profile-modal');
+                if (modal) modal.style.display = 'flex';
+            } else {
+                _renderUserBar();
+                if ($('vp-tab-body')) _loadTab(_activeTab);
+            }
+        } else if (e.data.type === 'KAKAO_ERR') {
+            alert(`카카오 로그인 오류: ${e.data.msg || '다시 시도해 주세요.'}`);
+        }
+    });
+
     return { load, openLoginModal, closeLoginModal, submitLogin,
+             openKakaoLogin, submitProfile,
              _logout, _submitMatch, _submitRecruit, _joinRecruit,
              _submitReview, _onRadio };
 })();

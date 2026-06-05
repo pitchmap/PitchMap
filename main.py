@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import json
 import os
 import re
 import time
@@ -1027,11 +1028,17 @@ async def get_all_matches(
 
 
 # ── 프론트엔드 서빙 ───────────────────────────────────────────
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
+from urllib.parse import urlencode
 
 # .env에서 로드, 없으면 로컬 개발용 기본값
-_KAKAO_APP_KEY = os.environ.get("KAKAO_APP_KEY", "30d61422e38612b247c57f3942a111bd")
-_HTML_PATH     = Path(__file__).parent / "index.html"
+_KAKAO_APP_KEY  = os.environ.get("KAKAO_APP_KEY", "30d61422e38612b247c57f3942a111bd")
+_KAKAO_REST_KEY = os.environ.get("KAKAO_REST_API_KEY", "")
+_KAKAO_REDIRECT = os.environ.get(
+    "KAKAO_REDIRECT_URI", "http://127.0.0.1:8000/api/auth/kakao/callback"
+)
+_KAKAO_ID_MAP: dict[str, str] = {}   # kakao_id → session token (서버 재시작 전 재사용)
+_HTML_PATH      = Path(__file__).parent / "index.html"
 
 @app.get("/api/config")
 async def get_api_config(request: Request):
@@ -1287,6 +1294,109 @@ async def vp_login(b: _VPLoginIn):
 @app.get("/api/auth/me")
 async def vp_me(token: str):
     return {"status": "success", "data": _vp_user(token)}
+
+
+# ── 카카오 OAuth ─────────────────────────────────────────────────
+
+@app.get("/api/auth/kakao/login")
+async def kakao_oauth_start():
+    if not _KAKAO_REST_KEY:
+        raise HTTPException(503, "KAKAO_REST_API_KEY 환경변수가 설정되지 않았습니다")
+    q = urlencode({
+        "client_id":     _KAKAO_REST_KEY,
+        "redirect_uri":  _KAKAO_REDIRECT,
+        "response_type": "code",
+    })
+    return RedirectResponse(f"https://kauth.kakao.com/oauth/authorize?{q}")
+
+
+@app.get("/api/auth/kakao/callback")
+async def kakao_oauth_callback(code: str = Query(...)):
+    def _popup_err(msg: str) -> HTMLResponse:
+        safe = msg.replace("'", "\\'")
+        return HTMLResponse(
+            f"<script>window.opener?.postMessage({{type:'KAKAO_ERR',msg:'{safe}'}},'*');"
+            "window.close();</script>"
+        )
+
+    # 1. 인가 코드 → 액세스 토큰
+    async with httpx.AsyncClient() as cl:
+        tr = await cl.post(
+            "https://kauth.kakao.com/oauth/token",
+            data={"grant_type": "authorization_code", "client_id": _KAKAO_REST_KEY,
+                  "redirect_uri": _KAKAO_REDIRECT, "code": code},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=10,
+        )
+    if tr.status_code != 200:
+        return _popup_err("토큰 발급 실패")
+    access_token = tr.json().get("access_token", "")
+
+    # 2. 액세스 토큰 → 사용자 정보
+    async with httpx.AsyncClient() as cl:
+        mr = await cl.get(
+            "https://kapi.kakao.com/v2/user/me",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=10,
+        )
+    if mr.status_code != 200:
+        return _popup_err("사용자 정보 조회 실패")
+
+    me       = mr.json()
+    kakao_id = str(me["id"])
+    profile  = me.get("kakao_account", {}).get("profile", {})
+    nickname = (profile.get("nickname")
+                or me.get("properties", {}).get("nickname", "카카오유저"))
+    avatar   = (profile.get("thumbnail_image_url")
+                or me.get("properties", {}).get("thumbnail_image", ""))
+
+    # 3. 기존 세션 재사용 또는 신규 생성
+    if kakao_id in _KAKAO_ID_MAP:
+        token = _KAKAO_ID_MAP[kakao_id]
+        if token in _VP_SESSIONS:
+            _VP_SESSIONS[token].update({"nickname": nickname, "avatar": avatar})
+    else:
+        token = _jid()
+        _KAKAO_ID_MAP[kakao_id] = token
+
+    prev = _VP_SESSIONS.get(token, {})
+    user = {
+        "token":    token,
+        "nickname": nickname,
+        "kakao_id": kakao_id,
+        "avatar":   avatar,
+        "region":   prev.get("region", ""),
+        "position": prev.get("position", "올포지션"),
+    }
+    _VP_SESSIONS[token] = user
+
+    # 4. 팝업 → opener postMessage 후 창 닫기 (직접 접근 시 localStorage 저장 후 홈 이동)
+    user_json = json.dumps(user, ensure_ascii=False)
+    return HTMLResponse(f"""<!doctype html><html><head><meta charset="utf-8">
+<title>카카오 로그인</title></head>
+<body style="font-family:sans-serif;text-align:center;padding:60px;color:#475569;">
+<p>로그인 완료 — 잠시 후 창이 닫힙니다.</p>
+<script>(function(){{
+  var u={user_json};
+  if(window.opener){{window.opener.postMessage({{type:'KAKAO_LOGIN_DONE',user:u}},'*');}}
+  else{{localStorage.setItem('pm_user',JSON.stringify(u));location.replace('/');}}
+  setTimeout(function(){{window.close();}},400);
+}})();</script></body></html>""")
+
+
+# ── 프로필 업데이트 (카카오 로그인 후 지역·포지션 설정) ─────────
+
+class _VPProfileIn(_JModel):
+    token:    str
+    region:   str
+    position: str = "올포지션"
+
+@app.patch("/api/auth/me")
+async def vp_update_profile(b: _VPProfileIn):
+    u = _vp_user(b.token)
+    u["region"]   = b.region
+    u["position"] = b.position
+    return {"status": "success", "data": u}
 
 
 # ── 구장별 팀 매칭 ───────────────────────────────────────────────

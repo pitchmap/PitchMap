@@ -604,7 +604,7 @@
     <!-- ─── 토스트 컨테이너 ─── -->
     <div id="toast-wrap"></div>
 
-    <!-- ── 간편 로그인 모달 ──────────────────────────────── -->
+    <!-- ── 로그인 모달 ──────────────────────────────────── -->
     <div id="pm-login-modal"
          style="display:none;position:fixed;inset:0;z-index:200;
                 background:rgba(15,23,42,0.55);align-items:center;justify-content:center;">
@@ -612,29 +612,97 @@
                     width:320px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
             <p style="font-weight:900;font-size:20px;color:#1e293b;
                        letter-spacing:-0.5px;margin-bottom:4px;">⚽ PitchMap</p>
-            <p style="font-size:13px;color:#64748b;margin-bottom:20px;">
-                닉네임만 입력하면 바로 시작!</p>
+            <p style="font-size:13px;color:#64748b;margin-bottom:16px;">
+                로그인하고 매칭에 참여하세요</p>
+
+            <!-- 카카오 로그인 (primary) -->
+            <button id="pm-kakao-btn" onclick="VenuePlatform.openKakaoLogin()"
+                style="width:100%;padding:13px 16px;background:#FEE500;color:#3C1E1E;
+                       border:none;border-radius:12px;font-weight:900;font-size:14px;
+                       cursor:pointer;margin-bottom:14px;display:flex;align-items:center;
+                       justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(254,229,0,0.45);">
+                <svg width="20" height="20" viewBox="0 0 24 24" style="flex-shrink:0;">
+                    <path fill="#3C1E1E" d="M12 3C6.48 3 2 6.93 2 11.75c0 3.08 1.74 5.79
+                    4.36 7.34L5.25 22.5l4.56-2.48A10.5 10.5 0 0 0 12 20.5c5.52 0
+                    10-3.93 10-8.75S17.52 3 12 3z"/>
+                </svg>
+                카카오로 1초 로그인
+            </button>
+
+            <!-- 구분선 -->
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+                <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+                <span style="font-size:11px;color:#94a3b8;font-weight:600;">또는 직접 입력</span>
+                <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+            </div>
+
+            <!-- 닉네임 직접 입력 -->
             <input id="pm-login-nick" class="ji" placeholder="닉네임 *"
                    style="margin-bottom:8px;">
             <select id="pm-login-region" class="ji" style="margin-bottom:8px;">
                 <option value="">활동 지역 *</option>
                 <option>서울</option><option>부산</option><option>인천</option>
                 <option>경기</option><option>대구</option><option>광주</option>
+                <option>대전/세종</option><option>울산</option><option>경남</option>
+                <option>경북</option><option>강원</option><option>전북</option>
+                <option>전남</option><option>충남</option><option>충북</option>
+                <option>제주</option>
             </select>
-            <select id="pm-login-pos" class="ji" style="margin-bottom:20px;">
+            <select id="pm-login-pos" class="ji" style="margin-bottom:16px;">
                 <option>올포지션</option><option>GK</option><option>DF</option>
                 <option>MF</option><option>FW</option>
             </select>
             <button onclick="VenuePlatform.submitLogin()"
-                style="width:100%;padding:13px;background:#2563eb;color:#fff;
+                style="width:100%;padding:11px;background:#2563eb;color:#fff;
                        border:none;border-radius:12px;font-weight:800;
-                       font-size:14px;cursor:pointer;margin-bottom:8px;">
-                시작하기
+                       font-size:13px;cursor:pointer;margin-bottom:8px;">
+                닉네임으로 시작하기
             </button>
             <button onclick="VenuePlatform.closeLoginModal()"
                 style="width:100%;padding:10px;background:none;border:none;
                        color:#94a3b8;font-size:13px;cursor:pointer;">
                 닫기
+            </button>
+        </div>
+    </div>
+
+    <!-- ── 카카오 로그인 후 지역·포지션 설정 모달 ────────── -->
+    <div id="pm-profile-modal"
+         style="display:none;position:fixed;inset:0;z-index:210;
+                background:rgba(15,23,42,0.6);align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:20px;padding:28px 24px;
+                    width:320px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+                <img id="pm-profile-avatar" src="" width="40" height="40"
+                     style="border-radius:50%;object-fit:cover;border:2.5px solid #FEE500;display:none;"
+                     onerror="this.style.display='none'">
+                <div>
+                    <p id="pm-profile-greet"
+                       style="font-weight:900;font-size:16px;color:#1e293b;margin:0;"></p>
+                    <p style="font-size:11px;color:#64748b;margin:2px 0 0;">
+                        마지막 설정만 하면 완료!</p>
+                </div>
+            </div>
+            <p style="font-size:13px;color:#64748b;margin:14px 0 14px;">
+                활동 지역과 포지션을 선택해 주세요.</p>
+            <select id="pm-profile-region" class="ji" style="margin-bottom:8px;">
+                <option value="">활동 지역 *</option>
+                <option>서울</option><option>부산</option><option>인천</option>
+                <option>경기</option><option>대구</option><option>광주</option>
+                <option>대전/세종</option><option>울산</option><option>경남</option>
+                <option>경북</option><option>강원</option><option>전북</option>
+                <option>전남</option><option>충남</option><option>충북</option>
+                <option>제주</option>
+            </select>
+            <select id="pm-profile-pos" class="ji" style="margin-bottom:20px;">
+                <option>올포지션</option><option>GK</option><option>DF</option>
+                <option>MF</option><option>FW</option>
+            </select>
+            <button onclick="VenuePlatform.submitProfile()"
+                style="width:100%;padding:13px;background:#2563eb;color:#fff;
+                       border:none;border-radius:12px;font-weight:800;font-size:14px;
+                       cursor:pointer;">
+                시작하기
             </button>
         </div>
     </div>
