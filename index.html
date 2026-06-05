@@ -666,43 +666,100 @@
         </div>
     </div>
 
-    <!-- ── 카카오 로그인 후 지역·포지션 설정 모달 ────────── -->
+    <!-- ── 카카오 로그인 후 프로필 설정 모달 (enhanced) ─── -->
     <div id="pm-profile-modal"
          style="display:none;position:fixed;inset:0;z-index:210;
-                background:rgba(15,23,42,0.6);align-items:center;justify-content:center;">
-        <div style="background:#fff;border-radius:20px;padding:28px 24px;
-                    width:320px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-                <img id="pm-profile-avatar" src="" width="40" height="40"
-                     style="border-radius:50%;object-fit:cover;border:2.5px solid #FEE500;display:none;"
+                background:rgba(15,23,42,0.65);align-items:center;justify-content:center;
+                padding:16px;">
+        <div style="background:#fff;border-radius:24px;padding:28px 24px;
+                    width:360px;max-width:100%;max-height:90vh;overflow-y:auto;
+                    box-shadow:0 24px 64px rgba(0,0,0,0.32);">
+
+            <!-- 헤더 -->
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+                <img id="pm-profile-avatar" src="" width="48" height="48"
+                     style="border-radius:50%;object-fit:cover;border:3px solid #FEE500;display:none;"
                      onerror="this.style.display='none'">
                 <div>
                     <p id="pm-profile-greet"
-                       style="font-weight:900;font-size:16px;color:#1e293b;margin:0;"></p>
-                    <p style="font-size:11px;color:#64748b;margin:2px 0 0;">
-                        마지막 설정만 하면 완료!</p>
+                       style="font-weight:900;font-size:17px;color:#1e293b;margin:0;"></p>
+                    <p style="font-size:12px;color:#64748b;margin:3px 0 0;">
+                        아래 정보를 입력하면 매칭 기능이 활성화됩니다!</p>
                 </div>
             </div>
-            <p style="font-size:13px;color:#64748b;margin:14px 0 14px;">
-                활동 지역과 포지션을 선택해 주세요.</p>
-            <select id="pm-profile-region" class="ji" style="margin-bottom:8px;">
-                <option value="">활동 지역 *</option>
-                <option>서울</option><option>부산</option><option>인천</option>
-                <option>경기</option><option>대구</option><option>광주</option>
-                <option>대전/세종</option><option>울산</option><option>경남</option>
-                <option>경북</option><option>강원</option><option>전북</option>
-                <option>전남</option><option>충남</option><option>충북</option>
-                <option>제주</option>
-            </select>
-            <select id="pm-profile-pos" class="ji" style="margin-bottom:20px;">
-                <option>올포지션</option><option>GK</option><option>DF</option>
-                <option>MF</option><option>FW</option>
-            </select>
+
+            <!-- 닉네임 -->
+            <label class="pm-field-label">닉네임 <span style="color:#dc2626;">*</span></label>
+            <input id="pm-profile-nick" class="ji" placeholder="사용할 닉네임"
+                   style="margin-bottom:14px;">
+
+            <!-- 선호 지역 (구/동 단위) -->
+            <label class="pm-field-label">선호 지역
+                <span style="color:#dc2626;">*</span>
+                <span style="font-weight:400;color:#94a3b8;">(예: 부산 남구, 인천 부평구)</span>
+            </label>
+            <input id="pm-profile-region" class="ji" placeholder="예) 부산 남구"
+                   style="margin-bottom:14px;">
+
+            <!-- 포지션 -->
+            <label class="pm-field-label">선호 포지션 <span style="color:#dc2626;">*</span></label>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px;">
+                <label class="pm-radio-btn">
+                    <input type="radio" name="pm-profile-pos-r" value="FW" style="display:none;">
+                    <span>⚡ FW</span>
+                </label>
+                <label class="pm-radio-btn">
+                    <input type="radio" name="pm-profile-pos-r" value="MF" style="display:none;">
+                    <span>🎯 MF</span>
+                </label>
+                <label class="pm-radio-btn">
+                    <input type="radio" name="pm-profile-pos-r" value="DF" style="display:none;">
+                    <span>🛡 DF</span>
+                </label>
+                <label class="pm-radio-btn">
+                    <input type="radio" name="pm-profile-pos-r" value="GK" style="display:none;">
+                    <span>🧤 GK</span>
+                </label>
+                <label class="pm-radio-btn" style="grid-column:span 2;">
+                    <input type="radio" name="pm-profile-pos-r" value="올포지션"
+                           style="display:none;" checked>
+                    <span>⚽ 올포지션</span>
+                </label>
+            </div>
+
+            <!-- 실력 레벨 -->
+            <label class="pm-field-label">실력 레벨 <span style="color:#dc2626;">*</span></label>
+            <div style="display:flex;gap:8px;margin-bottom:22px;">
+                <label class="pm-radio-btn" style="flex:1;">
+                    <input type="radio" name="pm-profile-skill" value="하" style="display:none;">
+                    <span style="display:block;padding:10px 4px;text-align:center;">
+                        <span style="display:block;font-size:20px;margin-bottom:3px;">🌱</span>
+                        <span style="font-size:11px;font-weight:700;">입문/초급</span>
+                    </span>
+                </label>
+                <label class="pm-radio-btn" style="flex:1;">
+                    <input type="radio" name="pm-profile-skill" value="중" style="display:none;">
+                    <span style="display:block;padding:10px 4px;text-align:center;">
+                        <span style="display:block;font-size:20px;margin-bottom:3px;">⚽</span>
+                        <span style="font-size:11px;font-weight:700;">중급</span>
+                    </span>
+                </label>
+                <label class="pm-radio-btn" style="flex:1;">
+                    <input type="radio" name="pm-profile-skill" value="상" style="display:none;">
+                    <span style="display:block;padding:10px 4px;text-align:center;">
+                        <span style="display:block;font-size:20px;margin-bottom:3px;">🔥</span>
+                        <span style="font-size:11px;font-weight:700;">고급</span>
+                    </span>
+                </label>
+            </div>
+
             <button onclick="VenuePlatform.submitProfile()"
-                style="width:100%;padding:13px;background:#2563eb;color:#fff;
-                       border:none;border-radius:12px;font-weight:800;font-size:14px;
-                       cursor:pointer;">
-                시작하기
+                style="width:100%;padding:14px;background:#2563eb;color:#fff;
+                       border:none;border-radius:12px;font-weight:900;font-size:14px;
+                       cursor:pointer;transition:opacity 0.18s;"
+                onmouseover="this.style.opacity='0.85'"
+                onmouseout="this.style.opacity='1'">
+                프로필 저장하고 시작하기 →
             </button>
         </div>
     </div>
@@ -717,6 +774,19 @@
         #jochuk-panel { font-family:'Pretendard',system-ui,sans-serif; }
         .jtab-btn.jtab-active { color:#10b981;border-bottom:2.5px solid #10b981; }
         .jtab-pane.hidden { display:none; }
+        /* 프로필 모달 라디오 버튼 */
+        .pm-field-label { display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:5px; }
+        .pm-radio-btn { cursor:pointer; }
+        .pm-radio-btn > span:not(:first-child),
+        .pm-radio-btn > span:last-child {
+            display:block;border:1.5px solid #e2e8f0;border-radius:8px;
+            padding:7px 8px;font-size:12px;font-weight:700;color:#475569;
+            text-align:center;transition:all 0.15s;
+        }
+        .pm-radio-btn input:checked ~ span,
+        .pm-radio-btn input:checked + span {
+            border-color:#2563eb;background:#eff6ff;color:#2563eb;
+        }
     </style>
 
     <!-- 진입 플로팅 버튼 (map-page 표시 시 JS가 unhide) -->

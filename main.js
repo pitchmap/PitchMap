@@ -1619,33 +1619,107 @@ window.VenuePlatform = (function () {
     function openLoginModal()  { const m=$('pm-login-modal'); if(m) m.style.display='flex'; }
     function closeLoginModal() { const m=$('pm-login-modal'); if(m) m.style.display='none'; }
 
-    // ── 카카오 로그인 팝업 ───────────────────────────────────────
+    // ── 카카오 로그인 — 풀페이지 리다이렉트 방식 ─────────────────
     function openKakaoLogin() {
         closeLoginModal();
-        const popup = window.open(
-            `${_base()}/api/auth/kakao/login`,
-            'kakao_login',
-            'width=520,height=720,scrollbars=yes,resizable=yes'
-        );
-        if (!popup) alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해 주세요.');
+        window.location.href = `${_base()}/api/auth/kakao/login`;
     }
 
-    // ── 카카오 로그인 후 지역·포지션 설정 ───────────────────────
+    // ── URL 파라미터로 돌아온 Kakao 콜백 처리 ───────────────────
+    function _handleKakaoRedirect() {
+        const sp = new URLSearchParams(window.location.search);
+
+        // 오류 처리
+        const err = sp.get('pm_kakao_err');
+        if (err) {
+            window.history.replaceState({}, document.title, '/');
+            alert(`카카오 로그인 오류: ${err}`);
+            return;
+        }
+
+        const token = sp.get('pm_token');
+        if (!token) return;
+
+        const isNew = sp.get('pm_new') === '1';
+        const isProfileComplete = sp.get('pm_pc') === '1';
+
+        // 기존 localStorage 유저의 프로필 데이터 병합 (재로그인 시 보존)
+        let prevRegion = '', prevPosition = '올포지션', prevSkill = '';
+        if (!isNew) {
+            try {
+                const prev = JSON.parse(localStorage.getItem('pm_user') || '{}');
+                if (prev.kakao_id === sp.get('pm_kid')) {
+                    prevRegion   = prev.region   || '';
+                    prevPosition = prev.position || '올포지션';
+                    prevSkill    = prev.skill    || '';
+                }
+            } catch {}
+        }
+
+        const user = {
+            token:            token,
+            nickname:         sp.get('pm_nick') || '카카오유저',
+            kakao_id:         sp.get('pm_kid')  || '',
+            avatar:           sp.get('pm_av')   || '',
+            region:           prevRegion,
+            position:         prevPosition,
+            skill:            prevSkill,
+            profile_complete: isProfileComplete || (!isNew && !!prevRegion && !!prevSkill),
+        };
+
+        _user = user;
+        localStorage.setItem('pm_user', JSON.stringify(user));
+
+        // URL 쿼리스트링 제거
+        window.history.replaceState({}, document.title, '/');
+
+        _syncTopbarBtn();
+
+        if (!user.profile_complete) {
+            // 프로필 모달 열기
+            const greet = $('pm-profile-greet');
+            if (greet) greet.textContent = isNew
+                ? `${user.nickname}님, 환영해요! 🎉`
+                : `${user.nickname}님, 프로필을 완성해 주세요`;
+            const av = $('pm-profile-avatar');
+            if (av && user.avatar) { av.src = user.avatar; av.style.display = 'inline-block'; }
+            const nickEl = $('pm-profile-nick');
+            if (nickEl) nickEl.value = user.nickname;
+            const modal = $('pm-profile-modal');
+            if (modal) modal.style.display = 'flex';
+        } else {
+            _renderUserBar();
+            if ($('vp-tab-body')) _loadTab(_activeTab);
+        }
+    }
+
+    // ── 프로필 설정 저장 (닉네임·지역·포지션·실력) ──────────────
     async function submitProfile() {
         if (!_user) return;
-        const region = $('pm-profile-region')?.value;
-        const pos    = $('pm-profile-pos')?.value || '올포지션';
-        if (!region) return alert('활동 지역을 선택해 주세요.');
-        _user.region   = region;
-        _user.position = pos;
+        const nickname = $('pm-profile-nick')?.value?.trim() || _user.nickname;
+        const region   = $('pm-profile-region')?.value?.trim();
+        const pos      = document.querySelector('input[name="pm-profile-pos-r"]:checked')?.value
+                         || '올포지션';
+        const skill    = document.querySelector('input[name="pm-profile-skill"]:checked')?.value;
+
+        if (!region) return alert('선호 지역을 입력해 주세요.');
+        if (!skill)  return alert('실력 레벨을 선택해 주세요.');
+
         try {
             const res = await fetch(`${_base()}/api/auth/me`, {
                 method: 'PATCH',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({token: _user.token, region, position: pos}),
+                body: JSON.stringify({
+                    token: _user.token, nickname, region, position: pos, skill,
+                }),
             });
             if (res.ok) { const { data } = await res.json(); _user = data; }
-        } catch {}
+            else throw new Error();
+        } catch {
+            // 서버 저장 실패 시 로컬 적용
+            _user = { ..._user, nickname, region, position: pos, skill, profile_complete: true };
+        }
+
         localStorage.setItem('pm_user', JSON.stringify(_user));
         const m = $('pm-profile-modal');
         if (m) m.style.display = 'none';
@@ -1824,6 +1898,20 @@ window.VenuePlatform = (function () {
              카카오로 1초 로그인
            </button>
          </div>`;
+    const _profileCompletePrompt = () =>
+        `<div style="background:#fef3c7;border:1.5px dashed #fcd34d;border-radius:12px;
+                     padding:14px;margin-bottom:12px;text-align:center;">
+           <p style="font-size:13px;font-weight:800;color:#92400e;margin:0 0 6px;">
+             프로필 설정을 완료해야 이용 가능합니다</p>
+           <p style="font-size:11px;color:#b45309;margin:0 0 10px;">
+             닉네임·선호 지역·포지션·레벨을 설정해 주세요.</p>
+           <button onclick="document.getElementById('pm-profile-modal').style.display='flex'"
+             style="padding:9px 20px;background:#2563eb;color:#fff;border:none;
+                    border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
+             프로필 설정하기
+           </button>
+         </div>`;
+
     const _empty = txt => `<p style="text-align:center;color:#94a3b8;font-size:13px;
                                       padding:16px 0;">${txt}</p>`;
 
@@ -1831,8 +1919,10 @@ window.VenuePlatform = (function () {
     async function _tabMatch(el) {
         const { data } = await (await fetch(`${_base()}/api/venue/${_venueId}/matches`)).json();
 
-        const form = _user ? `
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;
+        const form = !_user
+            ? _loginBtn('팀 매칭 신청, 조건 제시, 상대팀 연결 기능')
+            : !_user.profile_complete ? _profileCompletePrompt()
+            : `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;
                       padding:12px;margin-bottom:12px;display:flex;flex-direction:column;gap:6px;">
             <p style="font-size:12px;font-weight:800;color:#475569;">팀 매칭 신청</p>
             <input class="ji" id="vp-m-date" type="datetime-local">
@@ -1856,7 +1946,7 @@ window.VenuePlatform = (function () {
                      border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
               팀 매칭 등록
             </button>
-          </div>` : _loginBtn('팀 매칭 신청, 조건 제시, 상대팀 연결 기능');
+          </div>`;
 
         const list = !data.length ? _empty('등록된 팀 매칭이 없습니다') :
             data.map(m => _card(`
@@ -1877,6 +1967,7 @@ window.VenuePlatform = (function () {
 
     async function _submitMatch() {
         if (!_user) return openLoginModal();
+        if (!_user.profile_complete) return;
         const body = { token: _user.token, match_date: v('vp-m-date'),
                        size: v('vp-m-size'), skill_level: v('vp-m-skill'),
                        fee_policy: v('vp-m-fee'), contact_url: v('vp-m-url'),
@@ -1891,8 +1982,10 @@ window.VenuePlatform = (function () {
     async function _tabRecruit(el) {
         const { data } = await (await fetch(`${_base()}/api/venue/${_venueId}/recruit`)).json();
 
-        const form = _user ? `
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;
+        const form = !_user
+            ? _loginBtn('개인 용병 모집 글 등록 및 참가 신청 기능')
+            : !_user.profile_complete ? _profileCompletePrompt()
+            : `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;
                       padding:12px;margin-bottom:12px;display:flex;flex-direction:column;gap:6px;">
             <p style="font-size:12px;font-weight:800;color:#475569;">용병 모집 등록</p>
             <input class="ji" id="vp-rc-date" type="datetime-local">
@@ -1910,20 +2003,25 @@ window.VenuePlatform = (function () {
                      border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
               용병 모집 등록
             </button>
-          </div>` : _loginBtn('개인 용병 모집 글 등록 및 참가 신청 기능');
+          </div>`;
 
         const list = !data.length ? _empty('모집 중인 용병 공고가 없습니다') :
             data.map(m => {
                 const pct = Math.round(m.current_players / m.max_players * 100);
-                const joinBtn = _user
-                    ? `<button onclick="VenuePlatform._joinRecruit('${m.id}')"
-                         style="width:100%;padding:7px;background:#7c3aed;color:#fff;border:none;
-                                border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">
-                         참가 신청</button>`
-                    : `<button onclick="VenuePlatform.openLoginModal()"
+                const joinBtn = !_user
+                    ? `<button onclick="VenuePlatform.openLoginModal()"
                          style="width:100%;padding:7px;background:#e2e8f0;color:#64748b;border:none;
                                 border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">
-                         로그인 후 참가 신청</button>`;
+                         로그인 후 참가 신청</button>`
+                    : !_user.profile_complete
+                    ? `<button onclick="document.getElementById('pm-profile-modal').style.display='flex'"
+                         style="width:100%;padding:7px;background:#fcd34d;color:#92400e;border:none;
+                                border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">
+                         프로필 설정 후 참가 신청</button>`
+                    : `<button onclick="VenuePlatform._joinRecruit('${m.id}')"
+                         style="width:100%;padding:7px;background:#7c3aed;color:#fff;border:none;
+                                border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">
+                         참가 신청</button>`;
                 return _card(`
                   <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
                     <span style="font-weight:800;font-size:13px;">${m.created_by}</span>
@@ -1949,6 +2047,7 @@ window.VenuePlatform = (function () {
 
     async function _submitRecruit() {
         if (!_user) return openLoginModal();
+        if (!_user.profile_complete) return;
         const body = { token: _user.token, match_date: v('vp-rc-date'),
                        max_players: parseInt(v('vp-rc-max'))||10,
                        fee_per_person: parseInt(v('vp-rc-fee'))||0,
@@ -2012,8 +2111,10 @@ window.VenuePlatform = (function () {
               </label>`).join('')}
           </div>`;
 
-        const form = _user ? `
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;
+        const form = !_user
+            ? _loginBtn('잔디 상태 및 매너 평점 리뷰 작성 기능')
+            : !_user.profile_complete ? _profileCompletePrompt()
+            : `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;
                       padding:12px;margin-bottom:12px;">
             <p style="font-size:12px;font-weight:800;color:#475569;margin-bottom:8px;">리뷰 남기기</p>
             ${selRow('turf','잔디',['상','중','하'])}
@@ -2024,7 +2125,7 @@ window.VenuePlatform = (function () {
                      border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">
               리뷰 등록
             </button>
-          </div>` : _loginBtn('잔디 상태 및 매너 평점 리뷰 작성 기능');
+          </div>`;
 
         const list = !data.length ? _empty('첫 번째 리뷰를 남겨보세요!') :
             data.map(r => _card(`
@@ -2061,6 +2162,7 @@ window.VenuePlatform = (function () {
 
     async function _submitReview() {
         if (!_user) return openLoginModal();
+        if (!_user.profile_complete) return;
         const get = name => $('vp-section')?.querySelector(`input[name="${name}"]:checked`)?.value;
         const turf = get('vp-rv-turf'), manner = get('vp-rv-manner'), comment = v('vp-rv-comment');
         if (!turf || !manner || !comment) return alert('잔디·매너·한줄평을 모두 입력하세요');
@@ -2100,6 +2202,7 @@ window.VenuePlatform = (function () {
     // ── 초기화 ──────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
         _loadSaved();
+        _handleKakaoRedirect();   // URL 파라미터로 돌아온 카카오 콜백 처리
         _syncTopbarBtn();
 
         // 모달 배경 클릭 시 닫기

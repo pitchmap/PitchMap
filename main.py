@@ -1312,12 +1312,8 @@ async def kakao_oauth_start():
 
 @app.get("/api/auth/kakao/callback")
 async def kakao_oauth_callback(code: str = Query(...)):
-    def _popup_err(msg: str) -> HTMLResponse:
-        safe = msg.replace("'", "\\'")
-        return HTMLResponse(
-            f"<script>window.opener?.postMessage({{type:'KAKAO_ERR',msg:'{safe}'}},'*');"
-            "window.close();</script>"
-        )
+    def _err(msg: str):
+        return RedirectResponse(f"/?{urlencode({'pm_kakao_err': msg})}", status_code=302)
 
     # 1. 인가 코드 → 액세스 토큰
     async with httpx.AsyncClient() as cl:
@@ -1329,7 +1325,7 @@ async def kakao_oauth_callback(code: str = Query(...)):
             timeout=10,
         )
     if tr.status_code != 200:
-        return _popup_err("토큰 발급 실패")
+        return _err("토큰 발급 실패")
     access_token = tr.json().get("access_token", "")
 
     # 2. 액세스 토큰 → 사용자 정보
@@ -1340,7 +1336,7 @@ async def kakao_oauth_callback(code: str = Query(...)):
             timeout=10,
         )
     if mr.status_code != 200:
-        return _popup_err("사용자 정보 조회 실패")
+        return _err("사용자 정보 조회 실패")
 
     me       = mr.json()
     kakao_id = str(me["id"])
@@ -1350,8 +1346,9 @@ async def kakao_oauth_callback(code: str = Query(...)):
     avatar   = (profile.get("thumbnail_image_url")
                 or me.get("properties", {}).get("thumbnail_image", ""))
 
-    # 3. 기존 세션 재사용 또는 신규 생성
-    if kakao_id in _KAKAO_ID_MAP:
+    # 3. 기존 세션 재사용 또는 신규 생성 (is_new 플래그로 신규 여부 판별)
+    is_new = kakao_id not in _KAKAO_ID_MAP
+    if not is_new:
         token = _KAKAO_ID_MAP[kakao_id]
         if token in _VP_SESSIONS:
             _VP_SESSIONS[token].update({"nickname": nickname, "avatar": avatar})
@@ -1361,41 +1358,48 @@ async def kakao_oauth_callback(code: str = Query(...)):
 
     prev = _VP_SESSIONS.get(token, {})
     user = {
-        "token":    token,
-        "nickname": nickname,
-        "kakao_id": kakao_id,
-        "avatar":   avatar,
-        "region":   prev.get("region", ""),
-        "position": prev.get("position", "올포지션"),
+        "token":            token,
+        "nickname":         nickname,
+        "kakao_id":         kakao_id,
+        "avatar":           avatar,
+        "region":           prev.get("region", ""),
+        "position":         prev.get("position", "올포지션"),
+        "skill":            prev.get("skill", ""),
+        "profile_complete": prev.get("profile_complete", False),
     }
     _VP_SESSIONS[token] = user
 
-    # 4. 팝업 → opener postMessage 후 창 닫기 (직접 접근 시 localStorage 저장 후 홈 이동)
-    user_json = json.dumps(user, ensure_ascii=False)
-    return HTMLResponse(f"""<!doctype html><html><head><meta charset="utf-8">
-<title>카카오 로그인</title></head>
-<body style="font-family:sans-serif;text-align:center;padding:60px;color:#475569;">
-<p>로그인 완료 — 잠시 후 창이 닫힙니다.</p>
-<script>(function(){{
-  var u={user_json};
-  if(window.opener){{window.opener.postMessage({{type:'KAKAO_LOGIN_DONE',user:u}},'*');}}
-  else{{localStorage.setItem('pm_user',JSON.stringify(u));location.replace('/');}}
-  setTimeout(function(){{window.close();}},400);
-}})();</script></body></html>""")
+    # 4. 메인 페이지로 리다이렉트 — URL 파라미터로 사용자 정보 전달
+    params: dict = {
+        "pm_token": token,
+        "pm_nick":  nickname,
+        "pm_kid":   kakao_id,
+        "pm_new":   "1" if is_new else "0",
+        "pm_pc":    "1" if user["profile_complete"] else "0",
+    }
+    if avatar:
+        params["pm_av"] = avatar
+    return RedirectResponse(f"/?{urlencode(params)}", status_code=302)
 
 
 # ── 프로필 업데이트 (카카오 로그인 후 지역·포지션 설정) ─────────
 
 class _VPProfileIn(_JModel):
     token:    str
+    nickname: str = ""
     region:   str
     position: str = "올포지션"
+    skill:    str = "중"    # 상|중|하
 
 @app.patch("/api/auth/me")
 async def vp_update_profile(b: _VPProfileIn):
     u = _vp_user(b.token)
-    u["region"]   = b.region
-    u["position"] = b.position
+    if b.nickname.strip():
+        u["nickname"] = b.nickname.strip()
+    u["region"]           = b.region
+    u["position"]         = b.position
+    u["skill"]            = b.skill
+    u["profile_complete"] = True
     return {"status": "success", "data": u}
 
 
