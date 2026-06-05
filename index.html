@@ -274,7 +274,7 @@
 
         @media (min-width: 768px) {
             #map-content-area {
-                left: 280px;
+                left: 0;
             }
         }
 
@@ -611,43 +611,78 @@
             text-align: center;
         }
 
-        /* ── 좌측 패널 ─────────────────────── */
+        /* ── 좌측 패널 (전체화면 지도 위 플로팅 처리) ─── */
         #left-panel {
             position: absolute;
-            top: 104px;
-            left: 0;
-            bottom: 0;
-            width: 280px;
-            background: white;
-            border-right: 1px solid #e2e8f0;
-            box-shadow: 4px 0 16px rgba(0, 0, 0, 0.04);
-            z-index: 22; /* 맵 레이어 위로 완전히 올림으로써 클릭 가능 보장 */
+            top: 110px; /* 탑바와 칩바 아래에서 시작 */
+            left: 14px;
+            bottom: 20px;
+            width: 260px;
+            background: transparent; /* 뒷배경 투명화 */
+            border-right: none;
+            box-shadow: none;
+            z-index: 22; /* 맵 레이어 위로 완전히 올림 */
             display: flex;
             flex-direction: column;
-            padding: 16px;
-            gap: 16px;
+            padding: 0;
+            gap: 10px;
             overflow-y: auto;
+            pointer-events: none; /* 지도가 뒤에 가려져도 드래그되도록 컨테이너 자체는 마우스 이벤트 통과 */
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #left-panel::-webkit-scrollbar {
+            display: none;
+        }
+
+        #left-panel > * {
+            pointer-events: auto; /* 패널 내부 필터 카드들은 정상 클릭 가능하도록 설정 */
         }
 
         /* 모바일 대응 슬라이드 효과 */
         @media (max-width: 767px) {
             #left-panel {
+                left: 0;
+                top: 58px;
+                bottom: 0;
+                width: 280px;
+                padding: 16px;
+                background: rgba(255, 255, 255, 0.93);
+                backdrop-filter: blur(12px);
                 transform: translateX(-280px);
                 z-index: 35;
-                top: 58px; /* 모바일 탑바 바로 아래에서 시작 */
                 box-shadow: 8px 0 24px rgba(0, 0, 0, 0.15);
+                pointer-events: auto; /* 모바일 슬라이드 메뉴는 기존대로 동작 */
+            }
+            #left-panel > * {
+                background: transparent;
+                box-shadow: none;
+                border: none;
+                padding: 0;
             }
             #left-panel.open {
                 transform: translateX(0);
             }
         }
 
-        /* 좌측 패널 섹션 */
+        /* 좌측 패널 필터 카드 (글래스모피즘 디자인) */
         .lp-section {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.85);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+            border-radius: 14px;
+            padding: 10px 12px;
+            transition: all 0.2s ease;
+        }
+
+        .lp-section:hover {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            border-color: rgba(226, 232, 240, 0.95);
         }
 
         /* 라벨 디자인 */
@@ -665,7 +700,7 @@
             width: 100%;
             border: 1.5px solid #e2e8f0;
             border-radius: 10px;
-            padding: 9px 12px;
+            padding: 8px 11px;
             font-size: 13px;
             font-weight: 600;
             color: #334155;

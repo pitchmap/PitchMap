@@ -1103,6 +1103,7 @@ from urllib.parse import urlencode
 # .env에서 로드, 없으면 로컬 개발용 기본값
 _KAKAO_APP_KEY  = os.environ.get("KAKAO_APP_KEY", "30d61422e38612b247c57f3942a111bd")
 _KAKAO_REST_KEY = os.environ.get("KAKAO_REST_API_KEY", "")
+_KAKAO_CLIENT_SECRET = os.environ.get("KAKAO_CLIENT_SECRET", "")
 _KAKAO_REDIRECT = os.environ.get(
     "KAKAO_REDIRECT_URI", "http://127.0.0.1:8000/api/auth/kakao/callback"
 )
@@ -1400,11 +1401,19 @@ async def kakao_oauth_callback(code: str = Query(...), format: str = Query(None)
         )
 
     # 1. 인가 코드 → 액세스 토큰
+    token_data = {
+        "grant_type": "authorization_code",
+        "client_id": _KAKAO_REST_KEY,
+        "redirect_uri": _KAKAO_REDIRECT,
+        "code": code
+    }
+    if _KAKAO_CLIENT_SECRET:
+        token_data["client_secret"] = _KAKAO_CLIENT_SECRET
+
     async with httpx.AsyncClient() as cl:
         tr = await cl.post(
             "https://kauth.kakao.com/oauth/token",
-            data={"grant_type": "authorization_code", "client_id": _KAKAO_REST_KEY,
-                  "redirect_uri": _KAKAO_REDIRECT, "code": code},
+            data=token_data,
             headers={"Content-Type": "application/x-www-form-urlencoded"},
             timeout=10,
         )
