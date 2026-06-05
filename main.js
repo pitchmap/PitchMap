@@ -592,6 +592,39 @@ document.addEventListener('DOMContentLoaded', () => {
         // 인천
         '인천아시아드':          '인천아시아드주경기장 풋살',
         '송도풋살공원':          '송도풋살공원',
+        // 부산 신규
+        '백운포체육공원':        '백운포체육공원 풋살',
+        '을숙도생태공원':        '을숙도생태공원 풋살 사하',
+        '부산시민공원':          '부산시민공원 풋살',
+        '민락수변공원':          '민락수변공원 풋살',
+        '일광체육공원':          '기장 일광체육공원',
+        // 울산
+        '문수축구경기장':        '울산문수축구경기장 보조구장',
+        '태화강국가정원':        '태화강국가정원 울산',
+        // 경남
+        '양산디자인공원':        '양산 디자인공원 축구장',
+        '양산수질정화공원':      '양산 수질정화공원 축구장',
+        '창원성산공공체육':      '창원 성산구 풋살장',
+        '김해시공공풋살':        '김해시 풋살경기장',
+        '거제공공풋살':          '거제시 풋살경기장',
+        '진주종합경기장':        '진주종합경기장',
+        // 경북
+        '포항효자체육공원':      '포항 효자체육공원 풋살',
+        '경주황성공원':          '경주 황성공원 풋살',
+        '금오체육공원':          '구미 금오체육공원',
+        // 강원
+        '강릉올림픽파크':        '강릉올림픽파크 풋살',
+        '춘천종합운동장':        '춘천 종합운동장',
+        '원주종합운동장':        '원주 종합운동장',
+        // 전북
+        '전주월드컵경기장':      '전주월드컵경기장 보조구장',
+        // 전남
+        '광양축구전용구장':      '광양축구전용구장',
+        '팔마종합운동장':        '순천 팔마종합운동장',
+        // 충남/충북
+        '천안종합운동장':        '천안종합운동장 풋살',
+        '아산이순신종합운동장':  '아산이순신종합운동장',
+        '청주종합운동장':        '청주종합운동장 풋살',
     };
 
     // stadium.name 에서 SPECIAL_VENUE_MAP 키가 포함되면 매핑된 검색어 반환
@@ -775,7 +808,10 @@ document.addEventListener('DOMContentLoaded', () => {
         renderMatchList(stadiumData);
         openPanel();
         // 구장 매칭판 로드 (VenuePlatform 모듈이 준비된 경우)
-        if (window.VenuePlatform) window.VenuePlatform.load(stadiumData.name);
+        if (window.VenuePlatform) {
+            const isRental = stadiumData.matches.some(m => m.is_rental === true);
+            window.VenuePlatform.load(stadiumData.name, isRental);
+        }
     }
 
     // ── 날짜 세그먼트를 container(Element)에 렌더링 ──────────
@@ -1507,6 +1543,7 @@ window.VenuePlatform = (function () {
     let _user      = null;
     let _venueId   = null;
     let _activeTab = 'match';
+    let _isRental  = false;
 
     // ── 로그인 ──────────────────────────────────────────────────
     function _loadSaved() {
@@ -1543,47 +1580,65 @@ window.VenuePlatform = (function () {
     }
 
     // ── 구장 섹션 주입 ───────────────────────────────────────────
-    function load(venueName) {
+    function load(venueName, isRental = false) {
         _loadSaved();
         _venueId   = encodeURIComponent(venueName.trim());
-        _activeTab = 'match';
+        _isRental  = isRental;
+        _activeTab = isRental ? 'match' : 'review';
         $('vp-section')?.remove();
 
         const scroll = $('match-list-scroll');
         if (!scroll) return;
 
-        const sec = document.createElement('div');
-        sec.id = 'vp-section';
-        sec.innerHTML = `
-          <div style="border-top:2px dashed #e2e8f0;padding:14px 0 4px;">
-            <p style="font-weight:900;font-size:14px;color:#1e293b;margin-bottom:10px;padding:0 14px;">
-              🏟️ 이 구장에서 매칭하기
-            </p>
-            <div id="vp-user-bar" style="padding:0 14px 10px;"></div>
+        const TAB_LABELS = { match: '팀 매칭', recruit: '용병 모집', review: '리뷰' };
+        const tabs = isRental ? ['match', 'recruit', 'review'] : ['review'];
+
+        const tabBar = isRental ? `
             <div style="display:flex;border-bottom:2px solid #e2e8f0;padding:0 14px;">
-              ${['match','recruit','review'].map((t,i) => `
+              ${tabs.map((t, i) => `
                 <button class="vp-tbtn" data-vt="${t}"
                   style="flex:1;padding:9px 4px;font-size:12px;font-weight:700;border:none;
                          background:none;cursor:pointer;
                          color:${i===0?'#2563eb':'#64748b'};
                          border-bottom:${i===0?'2.5px solid #2563eb':'2.5px solid transparent'};
                          margin-bottom:-2px;">
-                  ${ {match:'팀 매칭',recruit:'용병 모집',review:'리뷰'}[t] }
+                  ${TAB_LABELS[t]}
                 </button>`).join('')}
-            </div>
+            </div>` : '';
+
+        const headerNote = isRental
+            ? ''
+            : `<p style="font-size:11px;color:#94a3b8;padding:0 14px 8px;margin:0;">
+                 대관 예약 불가 구장입니다. 방문 후기 및 잔디·매너 평점을 남겨주세요.
+               </p>`;
+
+        const sec = document.createElement('div');
+        sec.id = 'vp-section';
+        sec.innerHTML = `
+          <div style="border-top:2px dashed #e2e8f0;padding:14px 0 4px;">
+            <p style="font-weight:900;font-size:14px;color:#1e293b;
+                      margin-bottom:${isRental?'10px':'4px'};padding:0 14px;">
+              ${isRental ? '🏟️ 이 구장에서 매칭하기' : '📝 구장 리뷰'}
+            </p>
+            ${headerNote}
+            <div id="vp-user-bar" style="padding:0 14px 10px;"></div>
+            ${tabBar}
             <div id="vp-tab-body" style="padding:12px 14px;"></div>
           </div>`;
         scroll.appendChild(sec);
 
-        sec.querySelectorAll('.vp-tbtn').forEach(btn =>
-            btn.addEventListener('click', () => _switchTab(btn.dataset.vt))
-        );
+        if (isRental) {
+            sec.querySelectorAll('.vp-tbtn').forEach(btn =>
+                btn.addEventListener('click', () => _switchTab(btn.dataset.vt))
+            );
+        }
         _renderUserBar();
-        _loadTab('match');
+        _loadTab(_activeTab);
     }
 
     function _renderUserBar() {
         const el = $('vp-user-bar'); if (!el) return;
+        const loginLabel = _isRental ? '간편 로그인 후 매칭 참여하기' : '로그인 후 리뷰 남기기';
         el.innerHTML = _user
             ? `<div style="display:flex;align-items:center;justify-content:space-between;
                            background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:8px 12px;">
@@ -1603,7 +1658,7 @@ window.VenuePlatform = (function () {
             : `<button onclick="VenuePlatform.openLoginModal()"
                  style="width:100%;padding:10px;background:#2563eb;color:#fff;border:none;
                         border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;">
-                 간편 로그인 후 매칭 참여하기
+                 ${loginLabel}
                </button>`;
     }
 
