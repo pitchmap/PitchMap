@@ -164,7 +164,7 @@
             top: 0;
             left: 0;
             right: 0;
-            z-index: 20;
+            z-index: 100;
             background: rgba(255, 255, 255, 0.97);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid #e2e8f0;
@@ -912,16 +912,19 @@
                          background:#fff;border:1px solid #e2e8f0;border-radius:12px;
                          box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:130px;z-index:9999;overflow:hidden;">
                     <button onclick="VenuePlatform.openProfileModal()"
+                            onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='none'"
                             style="display:block;width:100%;padding:10px 14px;text-align:left;background:none;border:none;
-                                   font-size:13px;font-weight:600;color:#1e293b;cursor:pointer;">
-                        정보 수정
+                                   font-size:13px;font-weight:600;color:#2563eb;cursor:pointer;">
+                        ✏️ 정보 수정
                     </button>
                     <button onclick="VenuePlatform._logout()"
+                            onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='none'"
                             style="display:block;width:100%;padding:10px 14px;text-align:left;background:none;border:none;
                                    font-size:13px;font-weight:600;color:#1e293b;cursor:pointer;border-top:1px solid #f1f5f9;">
                         로그아웃
                     </button>
                     <button onclick="VenuePlatform._withdraw()"
+                            onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='none'"
                             style="display:block;width:100%;padding:10px 14px;text-align:left;background:none;border:none;
                                    font-size:13px;font-weight:600;color:#dc2626;cursor:pointer;border-top:1px solid #f1f5f9;">
                         회원 탈퇴

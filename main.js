@@ -169,6 +169,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function openPanel()  { sidePanel.classList.add('open'); }
     function closePanel() { sidePanel.classList.remove('open'); currentPanelStadium = null; }
 
+    // ESC 키로 패널 닫기
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
     // ── 목록 뷰 토글 ───────────────────────────────────────────
     function setListView(on) {
         isListView = on;
@@ -697,7 +700,10 @@ document.addEventListener('DOMContentLoaded', () => {
         '부산시민공원':          '부산시민공원 풋살',
         '민락수변공원':          '민락수변공원 풋살',
         '일광체육공원':          '기장 일광체육공원',
-        // 부산 상업 구장 (Plab)
+        '명지 근린공원':         '명지근린공원 부산 강서구',
+        '기산공원':              '기산공원 부산 사상구',
+        // 부산 공공+상업 구장 (Plab)
+        '남부환경체육공원':            '남부환경체육공원 부산 남구 축구장',
         '부산 프로픽 풋볼':            '프로픽풋볼 부산 사하',
         '부산 준타스 풋살 아레나':     '준타스풋살아레나 부산 부산진',
         '부산 기장 드림사커':          '드림사커풋살장 기장 일광',
@@ -758,6 +764,9 @@ document.addEventListener('DOMContentLoaded', () => {
         '부산시민공원':      { lat: 35.1663, lng: 129.0445 },
         '민락수변공원':      { lat: 35.1536, lng: 129.1244 },
         '일광체육공원':              { lat: 35.2749, lng: 129.2170 },
+        '명지 근린공원':             { lat: 35.0939, lng: 128.9254 },
+        '기산공원':                  { lat: 35.1508, lng: 128.9891 },
+        '남부환경체육공원':          { lat: 35.1241, lng: 129.0901 },
         '부산 프로픽 풋볼':          { lat: 35.0990, lng: 128.9604 },
         '부산 준타스 풋살 아레나':   { lat: 35.1610, lng: 129.0610 },
         '부산 기장 드림사커 풋살장': { lat: 35.2740, lng: 129.2150 },
@@ -998,6 +1007,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         panelStadium.innerHTML = `${stadiumData.name}${distText}`;
+
+        // 공유 버튼 — 구장명 클립보드 복사
+        document.getElementById('_panel-share-btn')?.remove();
+        const _shareBtn = document.createElement('button');
+        _shareBtn.id = '_panel-share-btn';
+        _shareBtn.title = '구장 이름 복사';
+        _shareBtn.style.cssText = 'margin-left:6px;padding:3px 8px;border:1px solid #e2e8f0;border-radius:6px;'
+            + 'background:#f8fafc;font-size:10px;font-weight:700;color:#64748b;cursor:pointer;vertical-align:middle;transition:all 0.15s;flex-shrink:0;';
+        _shareBtn.textContent = '📋 복사';
+        _shareBtn.addEventListener('click', () => {
+            navigator.clipboard?.writeText(stadiumData.name).then(() => toast('구장 이름이 복사되었습니다', 'success', 1800))
+                .catch(() => toast(stadiumData.name, 'info', 3000));
+        });
+        panelStadium.insertAdjacentElement('afterend', _shareBtn);
 
         // 대관 배지 + 아웃링크 버튼 — panel-stadium 바로 아래 삽입
         document.getElementById('_panel-rental-badge')?.remove();
@@ -1847,6 +1870,11 @@ window.VenuePlatform = (function () {
                   <span style="font-size:11px;color:#64748b;">${_user.region || ''}</span>
                 </div>
                 <div style="display:flex;gap:6px;align-items:center;">
+                  <button onclick="VenuePlatform.openProfileModal()"
+                    style="font-size:11px;color:#2563eb;border:none;background:none;cursor:pointer;padding:0;font-weight:700;">
+                    정보 수정
+                  </button>
+                  <span style="font-size:10px;color:#cbd5e1;">|</span>
                   <button onclick="VenuePlatform._logout()"
                     style="font-size:11px;color:#94a3b8;border:none;background:none;cursor:pointer;padding:0;">
                     로그아웃

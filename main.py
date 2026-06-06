@@ -149,9 +149,9 @@ RENTAL_WHITELIST: dict[str, dict] = {
     "더킥 풋살파크 해운대":       {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/thekick-futsal-haeundae/"},
     "플레이그라운드 풋살클럽":    {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/148/info/"},
     # 수도권 (서울)
-    "강동 송파 풋살장":           {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gangdong-songpa-futsal/"},
-    "강북 아크 풋살 스타디움":    {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gangbuk-arc-futsal/"},
-    "강서 KBS 스포츠월드":        {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gangseo-kbs-sportsworld/"},
+    "강동 송파 풋살장":           {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/244/info/"},
+    "강북 아크 풋살 스타디움":    {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/3545/info/"},
+    "강서 KBS 스포츠월드":        {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/3582/info/"},
     "노원 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/nowon-futsal-park/"},
     "마포 상암 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/mapo-sangam-futsal/"},
     "성동 왕십리 풋살장":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/seongdong-wangsimni-futsal/"},
@@ -185,6 +185,7 @@ RENTAL_WHITELIST: dict[str, dict] = {
     "부산 기장 드림사커 풋살장":  {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/3387/info/"},
     "부산 FC리틀슛 풋살장":       {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/3532/info/"},
     "부산 정관 제이 풋볼아카데미":{"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/3715/info/"},
+    "남부환경체육공원축구장":     {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/1177/info/"},
 }
 
 # 대관 불가 구장 블랙리스트 — 소셜매치 전용 (리뷰만 표시)
@@ -240,6 +241,9 @@ STADIUM_MAPPING = {
     "인천 부평 풋살장":               "인천 부평 풋살장",
     "부산 기장 풋살파크":             "기장 풋살파크",
     "경남 창원 FC 풋살파크":          "창원 FC 풋살파크",
+    # 부산 Plab 추가 구장 정규화
+    "남부환경체육공원 축구장":         "남부환경체육공원축구장",
+    "부산 남부환경체육공원":           "남부환경체육공원축구장",
 }
 
 REGION_MAPPING = {
@@ -770,6 +774,15 @@ def get_public_dummy_matches(now: datetime.datetime, region: str) -> list:
             ("기장 일광 체육공원 풋살장", "일광체육공원",
              "전화", "",
              "051-709-4000", "부산 기장군 일광읍 소재. 기장군청 문화체육과 문의. 인조잔디 풋살구장 운영."),
+            ("명지 근린공원 축구장", "명지 근린공원",
+             "전화", "",
+             "051-970-4000", "부산 강서구 명지동 소재. 강서구청 공원녹지과 문의 후 대관. 야외 인조잔디 구장."),
+            ("기산공원 풋살장", "기산공원",
+             "전화", "",
+             "051-310-4000", "부산 사상구 기산동 소재. 사상구청 문화체육과 문의. 야외 풋살 구장."),
+            ("남부환경체육공원 축구장", "남부환경체육공원",
+             "온라인", "https://www.plabfootball.com/stadium/1177/info/",
+             "051-607-4000", "부산 남구 소재. 플랩풋볼을 통한 소셜매치 예약 가능. 야외 잔디 구장."),
         ],
         "경기": [
             ("수원 월드컵경기장 보조구장", "수원월드컵경기장",

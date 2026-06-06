@@ -111,17 +111,17 @@
     "강동 송파 풋살장": {
       "platform_label": "플랩풋볼",
       "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/gangdong-songpa-futsal/"
+      "rental_url": "https://www.plabfootball.com/stadium/244/info/"
     },
     "강북 아크 풋살 스타디움": {
       "platform_label": "플랩풋볼",
       "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/gangbuk-arc-futsal/"
+      "rental_url": "https://www.plabfootball.com/stadium/3545/info/"
     },
     "강서 KBS 스포츠월드": {
       "platform_label": "플랩풋볼",
       "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/gangseo-kbs-sportsworld/"
+      "rental_url": "https://www.plabfootball.com/stadium/3582/info/"
     },
     "노원 풋살파크": {
       "platform_label": "플랩풋볼",
@@ -242,6 +242,11 @@
       "platform_label": "플랩풋볼",
       "is_rental": true,
       "rental_url": "https://www.plabfootball.com/stadium/3715/info/"
+    },
+    "남부환경체육공원축구장": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/stadium/1177/info/"
     }
   },
   "junk_filter_keywords": ["레슨", "훈련", "이벤트", "클래스", "아카데미", "스킬 레슨", "일반 스킬", "키즈", "유소년", "교실"]
