@@ -1449,12 +1449,13 @@ async def kakao_oauth_callback(request: Request, code: str = Query(...), format:
         )
 
     # 1. 인가 코드 → 액세스 토큰
-    # Client Secret 미사용 앱: 5대 필수 파라미터만 전송 (client_secret 완전 배제)
+    # REST API 키는 클라이언트 시크릿 기본 활성화 상태 → client_secret 필수 포함
     token_data = {
         "grant_type": "authorization_code",
         "client_id": _KAKAO_REST_KEY,
         "redirect_uri": redirect_uri,
         "code": code,
+        "client_secret": _KAKAO_CLIENT_SECRET,
     }
 
     async with httpx.AsyncClient() as cl:
