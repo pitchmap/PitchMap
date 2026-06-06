@@ -697,6 +697,12 @@ document.addEventListener('DOMContentLoaded', () => {
         '부산시민공원':          '부산시민공원 풋살',
         '민락수변공원':          '민락수변공원 풋살',
         '일광체육공원':          '기장 일광체육공원',
+        // 부산 상업 구장 (Plab)
+        '부산 프로픽 풋볼':            '프로픽풋볼 부산 사하',
+        '부산 준타스 풋살 아레나':     '준타스풋살아레나 부산 부산진',
+        '부산 기장 드림사커':          '드림사커풋살장 기장 일광',
+        '부산 FC리틀슛':               'FC리틀슛풋살 화명',
+        '부산 정관 제이 풋볼아카데미': '제이풋볼아카데미 정관',
         // 울산
         '문수축구경기장':        '울산문수축구경기장 보조구장',
         '태화강국가정원':        '태화강국가정원 울산',
@@ -751,7 +757,14 @@ document.addEventListener('DOMContentLoaded', () => {
         '을숙도생태공원':    { lat: 35.0876, lng: 128.9768 },
         '부산시민공원':      { lat: 35.1663, lng: 129.0445 },
         '민락수변공원':      { lat: 35.1536, lng: 129.1244 },
-        '일광체육공원':      { lat: 35.2749, lng: 129.2170 },
+        '일광체육공원':              { lat: 35.2749, lng: 129.2170 },
+        '부산 프로픽 풋볼':          { lat: 35.0990, lng: 128.9604 },
+        '부산 준타스 풋살 아레나':   { lat: 35.1610, lng: 129.0610 },
+        '부산 기장 드림사커 풋살장': { lat: 35.2740, lng: 129.2150 },
+        '부산 FC리틀슛 풋살장':      { lat: 35.2250, lng: 129.0050 },
+        '부산 정관 제이 풋볼아카데미':{ lat: 35.2990, lng: 129.1580 },
+        '플레이그라운드 풋살클럽':   { lat: 35.1690, lng: 129.1310 },
+        'BS89 연산':                 { lat: 35.1903, lng: 129.0802 },
         // 경남
         '양산디자인공원':    { lat: 35.3226, lng: 129.0004 },  // 물금읍 백호로 23
         '양산수질정화공원':  { lat: 35.3071, lng: 129.0225 },  // 강변로 54
@@ -878,9 +891,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
         Object.values(stadiums).forEach(stadium => {
             _resolvePosition(stadium, region, fallbackRandom, pos => {
-                // 최종 좌표 유효성 이중 확인 후 마커 생성
                 if (pos && _isKorea(pos.getLat(), pos.getLng())) {
-                    createMarker(pos, stadium);
+                    // 동일 좌표 30m 이내 다른 플랫폼 마커와 병합 → MIXED 단일 마커
+                    const MERGE_KM = 0.03;
+                    const newPlatforms = new Set(stadium.matches.map(m => m.platform));
+                    let merged = false;
+                    for (const [k, mObj] of markerIndex.entries()) {
+                        if (!mObj.position) continue;
+                        const dist = getDistance(
+                            pos.getLat(), pos.getLng(),
+                            mObj.position.getLat(), mObj.position.getLng()
+                        );
+                        const existPlatforms = new Set(mObj.stadiumData.matches.map(m => m.platform));
+                        const hasDifferentPlatform = [...newPlatforms].some(p => !existPlatforms.has(p));
+                        if (dist <= MERGE_KM && hasDifferentPlatform) {
+                            mObj.stadiumData.matches.push(...stadium.matches);
+                            allStadiumData[stadium.name] = mObj.stadiumData;
+                            // 기존 마커 제거 후 병합 마커 재생성
+                            mObj.overlay.setMap(null);
+                            const idx = markers.indexOf(mObj);
+                            if (idx !== -1) markers.splice(idx, 1);
+                            markerIndex.delete(k);
+                            createMarker(mObj.position, mObj.stadiumData);
+                            merged = true;
+                            break;
+                        }
+                    }
+                    if (!merged) createMarker(pos, stadium);
                 } else {
                     console.warn(`[마커 스킵] 유효하지 않은 좌표: ${stadium.name}`, pos);
                 }
@@ -996,6 +1033,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         refreshFavBtn(stadiumData.name);
+
+        // MIXED 플랫폼 탭 바 (플랩/어반 동시 구장)
+        document.getElementById('_platform-tabs')?.remove();
+        _mixedActivePlatform = null;
+        const _panelPlatforms = [...new Set(stadiumData.matches.map(m => m.platform))];
+        if (_panelPlatforms.includes('PLAB') && _panelPlatforms.includes('URBAN')) {
+            const plabCount  = stadiumData.matches.filter(m => m.platform === 'PLAB').length;
+            const urbanCount = stadiumData.matches.filter(m => m.platform === 'URBAN').length;
+            const TAB_DEFS = [
+                { key: 'ALL',   label: `전체 (${plabCount + urbanCount}건)`, color: '#7c3aed' },
+                { key: 'PLAB',  label: `플랩 (${plabCount}건)`,              color: '#2563eb' },
+                { key: 'URBAN', label: `어반 (${urbanCount}건)`,             color: '#1e293b' },
+            ];
+            const tabBar = document.createElement('div');
+            tabBar.id = '_platform-tabs';
+            tabBar.style.cssText = 'display:flex;gap:0;padding:0 14px;background:#f8fafc;border-bottom:2px solid #e2e8f0;';
+            TAB_DEFS.forEach(({ key, label, color }) => {
+                const btn = document.createElement('button');
+                btn.dataset.ptab = key;
+                const isActive = key === 'ALL';
+                btn.style.cssText = `padding:8px 14px;border:none;border-bottom:3px solid ${isActive ? color : 'transparent'};`
+                    + `background:transparent;font-size:12px;font-weight:700;`
+                    + `color:${isActive ? color : '#94a3b8'};cursor:pointer;transition:all 0.15s;`;
+                btn.textContent = label;
+                btn.addEventListener('click', () => {
+                    _mixedActivePlatform = key === 'ALL' ? null : key;
+                    renderMatchList(stadiumData);
+                    document.querySelectorAll('[data-ptab]').forEach(b => {
+                        const bKey = b.dataset.ptab;
+                        const bColor = TAB_DEFS.find(t => t.key === bKey)?.color || '#7c3aed';
+                        const bActive = ((_mixedActivePlatform || 'ALL') === bKey);
+                        b.style.borderBottomColor = bActive ? bColor : 'transparent';
+                        b.style.color = bActive ? bColor : '#94a3b8';
+                    });
+                });
+                tabBar.appendChild(btn);
+            });
+            panelMatchList.parentElement.insertBefore(tabBar, panelMatchList);
+        }
+
         renderMatchList(stadiumData);
         openPanel();
         if (window.VenuePlatform) window.VenuePlatform.load(stadiumData.name, isRental);
@@ -1047,10 +1124,13 @@ document.addEventListener('DOMContentLoaded', () => {
         panelMatchList.innerHTML = '';
 
         const NEAR_SET = new Set(['오늘', '내일', '모레', '상시 대관']);
+        const activeMatches = _mixedActivePlatform
+            ? stadiumData.matches.filter(m => m.platform === _mixedActivePlatform)
+            : stadiumData.matches;
 
         // 날짜 → 코트 2단계 그룹핑
         const byDate = {};
-        stadiumData.matches.forEach(m => {
+        activeMatches.forEach(m => {
             const dl = m.date_label || '기타';
             if (!byDate[dl]) byDate[dl] = {};
             if (!byDate[dl][m.stadium]) byDate[dl][m.stadium] = [];
@@ -1472,6 +1552,7 @@ window.VenuePlatform = (function () {
     let _venueId   = null;
     let _activeTab = 'match';
     let _isRental  = false;
+    let _mixedActivePlatform = null; // null = 전체, 'PLAB' / 'URBAN' = 탭 필터
 
     // ── 로그인 ──────────────────────────────────────────────────
     function _loadSaved() {
@@ -2176,6 +2257,7 @@ window.VenuePlatform = (function () {
         _loadSaved();
         _handleKakaoRedirect();   // URL 파라미터로 돌아온 카카오 콜백 처리
         _syncTopbarBtn();
+        if (_user?.profile_complete) _renderUserBar();
 
         // 모달 배경 클릭 시 닫기
         $('pm-login-modal')?.addEventListener('click', e => {

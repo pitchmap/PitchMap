@@ -143,11 +143,11 @@ RENTAL_WHITELIST: dict[str, dict] = {
     "스포풋살파크":               {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/spo-futsal-park/"},
     "센텀풋살장":                 {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/centum-futsal/"},
     "레인보우풋살파크 사하":      {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/rainbow-futsal-saha/"},
-    "BS89 연산":                  {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/bs89-yeonsan/"},
+    "BS89 연산":                  {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/112/info/"},
     "백호 풋살파크 만덕":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/baekho-futsal-park/"},
     "주레 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/3501/info/"},
     "더킥 풋살파크 해운대":       {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/thekick-futsal-haeundae/"},
-    "플레이그라운드 풋살클럽":    {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/playground-futsal/"},
+    "플레이그라운드 풋살클럽":    {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/148/info/"},
     # 수도권 (서울)
     "강동 송파 풋살장":           {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gangdong-songpa-futsal/"},
     "강북 아크 풋살 스타디움":    {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gangbuk-arc-futsal/"},
@@ -179,6 +179,12 @@ RENTAL_WHITELIST: dict[str, dict] = {
     "기장 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gijang-futsal-park/"},
     # 경남 추가
     "창원 FC 풋살파크":           {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/changwon-fc-futsal/"},
+    # 부산 Plab 추가
+    "부산 프로픽 풋볼":           {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/201/info/"},
+    "부산 준타스 풋살 아레나":    {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/212/info/"},
+    "부산 기장 드림사커 풋살장":  {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/3387/info/"},
+    "부산 FC리틀슛 풋살장":       {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/3532/info/"},
+    "부산 정관 제이 풋볼아카데미":{"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/3715/info/"},
 }
 
 # 대관 불가 구장 블랙리스트 — 소셜매치 전용 (리뷰만 표시)

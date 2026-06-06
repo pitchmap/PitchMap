@@ -81,7 +81,7 @@
     "BS89 연산": {
       "platform_label": "플랩풋볼",
       "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/bs89-yeonsan/"
+      "rental_url": "https://www.plabfootball.com/stadium/112/info/"
     },
     "HM풋살파크 화명점": {
       "platform_label": "어반풋볼",
@@ -106,7 +106,7 @@
     "플레이그라운드 풋살클럽": {
       "platform_label": "플랩풋볼",
       "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/playground-futsal/"
+      "rental_url": "https://www.plabfootball.com/stadium/148/info/"
     },
     "강동 송파 풋살장": {
       "platform_label": "플랩풋볼",
@@ -217,6 +217,31 @@
       "platform_label": "플랩풋볼",
       "is_rental": true,
       "rental_url": "https://www.plabfootball.com/rental/venue/changwon-fc-futsal/"
+    },
+    "부산 프로픽 풋볼": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/stadium/201/info/"
+    },
+    "부산 준타스 풋살 아레나": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/stadium/212/info/"
+    },
+    "부산 기장 드림사커 풋살장": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/stadium/3387/info/"
+    },
+    "부산 FC리틀슛 풋살장": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/stadium/3532/info/"
+    },
+    "부산 정관 제이 풋볼아카데미": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/stadium/3715/info/"
     }
   },
   "junk_filter_keywords": ["레슨", "훈련", "이벤트", "클래스", "아카데미", "스킬 레슨", "일반 스킬", "키즈", "유소년", "교실"]
