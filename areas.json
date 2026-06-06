@@ -21,7 +21,7 @@
     "어반풋볼파크 사상점": {
       "platform_label": "어반풋볼",
       "is_rental": true,
-      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=1&ref=main"
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=2&ref=main"
     },
     "어반풋볼파크 부산진구점": {
       "platform_label": "어반풋볼",
@@ -96,7 +96,7 @@
     "주레 풋살파크": {
       "platform_label": "플랩풋볼",
       "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/jure-futsal-park/"
+      "rental_url": "https://www.plabfootball.com/stadium/3501/info/"
     },
     "더킥 풋살파크 해운대": {
       "platform_label": "플랩풋볼",

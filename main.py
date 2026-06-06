@@ -129,7 +129,7 @@ def _check_rate_limit(client_ip: str) -> bool:
 # 이 목록에 없는 PLAB/URBAN 구장은 소셜매치 전용 → is_rental: False
 RENTAL_WHITELIST: dict[str, dict] = {
     # ── 어반풋볼 대관 파트너 (구장별 상세 페이지) ────────────────
-    "어반풋볼파크 사상점":        {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=1&ref=main"},
+    "어반풋볼파크 사상점":        {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=2&ref=main"},
     "어반풋볼파크 부산진구점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=2&ref=main"},
     "어반풋볼파크 부산강서1호점": {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=15&ref=main"},
     "어반풋볼파크 부산강서2호점": {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=16&ref=main"},
@@ -145,7 +145,7 @@ RENTAL_WHITELIST: dict[str, dict] = {
     "레인보우풋살파크 사하":      {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/rainbow-futsal-saha/"},
     "BS89 연산":                  {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/bs89-yeonsan/"},
     "백호 풋살파크 만덕":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/baekho-futsal-park/"},
-    "주레 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/jure-futsal-park/"},
+    "주레 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/3501/info/"},
     "더킥 풋살파크 해운대":       {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/thekick-futsal-haeundae/"},
     "플레이그라운드 풋살클럽":    {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/playground-futsal/"},
     # 수도권 (서울)
@@ -738,13 +738,13 @@ def get_public_dummy_matches(now: datetime.datetime, region: str) -> list:
              "온라인", "https://www.spo1.or.kr/",
              "1577-0890", "금정구 두구동 소재. 부산경륜공단(스포원) 공식 홈페이지의 대관 시스템을 통해 온라인 사전 예약 및 결제가 가능합니다."),
             ("화명생태공원 풋살장/축구장", "화명생태공원",
-             "온라인", "https://reserve.busan.go.kr/rent",
+             "온라인", "https://reserve.busan.go.kr/rent/view?resveGroupSn=55&progrmSn=213",
              "051-364-4127", "부산 북구 화명동 소재. 부산광역시 통합예약시스템에서 예약 가능하며 결제 완료 후 대관이 승인됩니다. 낙동강관리본부 관리."),
             ("삼락생태공원 풋살장", "삼락생태공원",
              "온라인", "https://reserve.busan.go.kr/rent",
              "051-303-0048", "부산 사상구 삼락동 소재. 부산시 통합예약시스템에서 신청할 수 있으며, 주말 예약 경쟁률이 높습니다."),
             ("대저생태공원 축구장", "대저생태공원",
-             "온라인", "https://reserve.busan.go.kr/rent",
+             "온라인", "https://reserve.busan.go.kr/rent/view?resveGroupSn=55&progrmSn=216",
              "051-971-6028", "부산 강서구 대저동 소재. 부산시 통합예약시스템을 통해 온라인 신청 및 대관료 납부가 필수적입니다."),
             ("황령산레포츠공원 풋살장", "황령산레포츠공원",
              "온라인", "https://www.busanjin.go.kr/index.busanjin?menuCd=DOM_000001503006000000",
@@ -1229,171 +1229,15 @@ async def serve_js():
     return FileResponse(p, media_type="application/javascript")
 
 
-# ═══════════════════════════════════════════════════════════════════
-# ⚽  조축 매칭 플랫폼 — 기존 코드와 완전 독립된 추가 모듈
-#     변수 prefix: _JX(교류전) / _JR(선모집) / _JT(팀 디렉토리)
-# ═══════════════════════════════════════════════════════════════════
-
 import uuid as _jochuk_uuid
 from asyncio import Lock as _JochukLock
 from typing import Optional as _JOpt
 from pydantic import BaseModel as _JModel
 
-# ── 인메모리 스토어 (서버 재시작 시 초기화, 운영 DB 없이 즉시 구동) ──
-_JX_STORE: list[dict] = []
-_JR_STORE: list[dict] = []
-_JT_STORE: list[dict] = []
-_JR_LOCK = _JochukLock()   # 선모집 참가 동시성 직렬화
-
 
 def _jid()  -> str: return str(_jochuk_uuid.uuid4())
 def _jnow() -> str: return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
-
-# ── A. 반반 교류전 ────────────────────────────────────────────────
-
-class _ExchangeIn(_JModel):
-    team_name:   str
-    region:      str
-    district:    str
-    pitch_name:  str
-    match_date:  str
-    skill_level: str = "중급"
-    age_group:   str = "30대"
-    fee_total:   int = 0
-    contact_url: str
-
-class _ExchangeApplyIn(_JModel):
-    guest_team:  str
-    message:     str = ""
-    contact_url: str = ""
-
-
-@app.get("/api/matches/exchange")
-async def jx_list(
-    region:      _JOpt[str] = None,
-    district:    _JOpt[str] = None,
-    skill_level: _JOpt[str] = None,
-):
-    out = _JX_STORE[:]
-    if region:      out = [m for m in out if m["region"] == region]
-    if district:    out = [m for m in out if district in m["district"]]
-    if skill_level: out = [m for m in out if m["skill_level"] == skill_level]
-    return {"status": "success", "data": sorted(out, key=lambda x: x["match_date"])}
-
-
-@app.post("/api/matches/exchange")
-async def jx_create(b: _ExchangeIn):
-    doc = {**b.dict(), "id": _jid(), "status": "open",
-           "fee_each": b.fee_total // 2,
-           "applications": [], "created_at": _jnow()}
-    _JX_STORE.append(doc)
-    return {"status": "success", "data": doc}
-
-
-@app.post("/api/matches/exchange/{mid}/apply")
-async def jx_apply(mid: str, b: _ExchangeApplyIn):
-    m = next((x for x in _JX_STORE if x["id"] == mid), None)
-    if not m:               raise HTTPException(404, "매치 없음")
-    if m["status"] != "open": raise HTTPException(400, "마감된 매치")
-    appl = {"id": _jid(), "guest_team": b.guest_team,
-            "message": b.message, "contact_url": b.contact_url, "at": _jnow()}
-    m["applications"].append(appl)
-    return {"status": "success", "data": appl}
-
-
-# ── B. 선모집 후대관 ──────────────────────────────────────────────
-
-class _RecruitIn(_JModel):
-    title:            str
-    region:           str
-    district:         str
-    pitch_name:       str
-    match_date:       str
-    booking_deadline: str
-    min_players:      int = 10
-    max_players:      int = 14
-    fee_per_person:   int = 0
-    booking_url:      str = ""
-    host_nickname:    str
-    contact_url:      str
-
-class _RecruitJoinIn(_JModel):
-    nickname: str
-
-
-@app.get("/api/matches/pre-recruit")
-async def jr_list(region: _JOpt[str] = None, district: _JOpt[str] = None):
-    out = [m for m in _JR_STORE if m["status"] in ("GATHERING", "CONFIRMED")]
-    if region:   out = [m for m in out if m["region"] == region]
-    if district: out = [m for m in out if district in m["district"]]
-    return {"status": "success", "data": sorted(out, key=lambda x: x["match_date"])}
-
-
-@app.post("/api/matches/pre-recruit")
-async def jr_create(b: _RecruitIn):
-    doc = {**b.dict(), "id": _jid(), "status": "GATHERING",
-           "current_players": 1, "participants": [b.host_nickname],
-           "created_at": _jnow()}
-    _JR_STORE.append(doc)
-    return {"status": "success", "data": doc}
-
-
-@app.post("/api/matches/pre-recruit/{mid}/join")
-async def jr_join(mid: str, b: _RecruitJoinIn):
-    async with _JR_LOCK:
-        m = next((x for x in _JR_STORE if x["id"] == mid), None)
-        if not m:                          raise HTTPException(404, "모집 글 없음")
-        if m["status"] != "GATHERING":     raise HTTPException(400, "모집 종료")
-        if m["current_players"] >= m["max_players"]: raise HTTPException(400, "인원 마감")
-        if b.nickname in m["participants"]: raise HTTPException(400, "이미 참가")
-        m["current_players"] += 1
-        m["participants"].append(b.nickname)
-        if m["current_players"] >= m["min_players"]:
-            m["status"] = "CONFIRMED"
-        return {"status": "success", "data": {
-            "current_players": m["current_players"],
-            "match_status":    m["status"],
-        }}
-
-
-# ── C. 조축 팀 디렉토리 ────────────────────────────────────────────
-
-class _TeamIn(_JModel):
-    team_name:     str
-    region:        str
-    district:      str
-    home_pitch:    str  = ""
-    match_day:     str  = "토요일"
-    match_time:    str  = "오전 7-9시"
-    age_group:     str
-    skill_level:   str
-    member_count:  int  = 11
-    recruiting:    bool = True
-    open_chat_url: str  = ""
-    description:   str  = ""
-
-
-@app.get("/api/teams")
-async def jt_list(
-    region:      _JOpt[str]  = None,
-    district:    _JOpt[str]  = None,
-    skill_level: _JOpt[str]  = None,
-    recruiting:  _JOpt[bool] = None,
-):
-    out = _JT_STORE[:]
-    if region:               out = [t for t in out if t["region"] == region]
-    if district:             out = [t for t in out if district in t["district"]]
-    if skill_level:          out = [t for t in out if t["skill_level"] == skill_level]
-    if recruiting is not None: out = [t for t in out if t["recruiting"] == recruiting]
-    return {"status": "success", "data": out}
-
-
-@app.post("/api/teams")
-async def jt_create(b: _TeamIn):
-    doc = {**b.dict(), "id": _jid(), "created_at": _jnow()}
-    _JT_STORE.append(doc)
-    return {"status": "success", "data": doc}
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -1412,11 +1256,6 @@ def _vp_user(token: str) -> dict:
     if not u: raise HTTPException(401, "로그인이 필요합니다")
     return u
 
-
-class _VPLoginIn(_JModel):
-    nickname: str
-    region:   str
-    position: str = "올포지션"
 
 class _VPMatchIn(_JModel):
     token:       str
@@ -1445,15 +1284,6 @@ class _VPReviewIn(_JModel):
     manner:  str   # 상|중|하
     comment: str
 
-
-# ── 로그인 ──────────────────────────────────────────────────────
-@app.post("/api/auth/login")
-async def vp_login(b: _VPLoginIn):
-    token = _jid()
-    user  = {"token": token, "nickname": b.nickname,
-              "region": b.region, "position": b.position}
-    _VP_SESSIONS[token] = user
-    return {"status": "success", "data": user}
 
 @app.get("/api/auth/me")
 async def vp_me(token: str):
@@ -1614,11 +1444,13 @@ body{{font-family:'Apple SD Gothic Neo',sans-serif;background:#f8fafc;
 # ── 프로필 업데이트 (카카오 로그인 후 지역·포지션 설정) ─────────
 
 class _VPProfileIn(_JModel):
-    token:    str
-    nickname: str = ""
-    region:   str
-    position: str = "올포지션"
-    skill:    str = "중"    # 상|중|하
+    token:          str
+    nickname:       str = ""
+    region:         str
+    position:       str = "올포지션"
+    plab_level:     str = ""
+    urban_level:    str = ""
+    football_skill: str = ""
 
 @app.patch("/api/auth/me")
 async def vp_update_profile(b: _VPProfileIn):
@@ -1627,7 +1459,9 @@ async def vp_update_profile(b: _VPProfileIn):
         u["nickname"] = b.nickname.strip()
     u["region"]           = b.region
     u["position"]         = b.position
-    u["skill"]            = b.skill
+    u["plab_level"]       = b.plab_level
+    u["urban_level"]      = b.urban_level
+    u["football_skill"]   = b.football_skill
     u["profile_complete"] = True
     return {"status": "success", "data": u}
 
