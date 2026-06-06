@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import re
+import secrets
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -158,6 +159,26 @@ RENTAL_WHITELIST: dict[str, dict] = {
     "수원 영통 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/suwon-yeongdong-futsal/"},
     "성남 야탑 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/seongnam-yatap-futsal/"},
     "고양 일산 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/goyang-ilsan-futsal/"},
+    # 수도권 (서울) 추가
+    "관악 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gwanak-futsal-park/"},
+    "영등포 풋살파크":            {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/yeongdeungpo-futsal/"},
+    "광진 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gwangjin-futsal/"},
+    "중랑 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/jungnang-futsal-park/"},
+    "서초 반포 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/seocho-banpo-futsal/"},
+    # 수도권 (경기) 추가
+    "안양 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/anyang-futsal-park/"},
+    "부천 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/bucheon-futsal-park/"},
+    "안산 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/ansan-futsal-park/"},
+    # 인천
+    "인천 부평 풋살장":           {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/incheon-bupyeong-futsal/"},
+    # 대구
+    "대구 달서 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/daegu-dalseo-futsal/"},
+    # 대전/세종
+    "대전 유성 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/daejeon-yuseong-futsal/"},
+    # 부산 추가
+    "기장 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gijang-futsal-park/"},
+    # 경남 추가
+    "창원 FC 풋살파크":           {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/changwon-fc-futsal/"},
 }
 
 # 대관 불가 구장 블랙리스트 — 소셜매치 전용 (리뷰만 표시)
@@ -201,6 +222,18 @@ STADIUM_MAPPING = {
     "경기 수원 영통 풋살파크":        "수원 영통 풋살파크",
     "경기 성남 야탑 풋살파크":        "성남 야탑 풋살파크",
     "경기 고양 일산 풋살파크":        "고양 일산 풋살파크",
+    # 추가 플랩 구장 정규화
+    "서울 관악 풋살파크":             "관악 풋살파크",
+    "서울 영등포 풋살파크":           "영등포 풋살파크",
+    "서울 광진 풋살파크":             "광진 풋살파크",
+    "서울 중랑 풋살파크":             "중랑 풋살파크",
+    "서울 서초 반포 풋살파크":        "서초 반포 풋살파크",
+    "경기 안양 풋살파크":             "안양 풋살파크",
+    "경기 부천 풋살파크":             "부천 풋살파크",
+    "경기 안산 풋살파크":             "안산 풋살파크",
+    "인천 부평 풋살장":               "인천 부평 풋살장",
+    "부산 기장 풋살파크":             "기장 풋살파크",
+    "경남 창원 FC 풋살파크":          "창원 FC 풋살파크",
 }
 
 REGION_MAPPING = {
@@ -1138,7 +1171,25 @@ _KAKAO_CLIENT_SECRET = os.environ.get("KAKAO_CLIENT_SECRET", "")
 _KAKAO_REDIRECT = os.environ.get(
     "KAKAO_REDIRECT_URI", "http://127.0.0.1:8000/api/auth/kakao/callback"
 )
-_KAKAO_ID_MAP: dict[str, str] = {}   # kakao_id → session token (서버 재시작 전 재사용)
+_KAKAO_ADMIN_KEY = os.environ.get("KAKAO_ADMIN_KEY", "")
+_KAKAO_ID_MAP: dict[str, str] = {}      # kakao_id → session token
+_OAUTH_STATES: dict[str, float] = {}    # state → created_at (epoch)
+_STATE_TTL = 600                         # 10분 유효
+
+def _new_oauth_state() -> str:
+    now = time.time()
+    expired = [k for k, v in list(_OAUTH_STATES.items()) if now - v > _STATE_TTL]
+    for k in expired:
+        _OAUTH_STATES.pop(k, None)
+    state = secrets.token_urlsafe(32)
+    _OAUTH_STATES[state] = now
+    return state
+
+def _validate_oauth_state(state: str) -> bool:
+    ts = _OAUTH_STATES.pop(state, None)
+    if ts is None:
+        return False
+    return (time.time() - ts) <= _STATE_TTL
 
 def _get_dynamic_redirect_uri(request: Request) -> str:
     host = request.headers.get("host", "")
@@ -1416,16 +1467,23 @@ async def kakao_oauth_start(request: Request):
     if not _KAKAO_REST_KEY:
         raise HTTPException(503, "KAKAO_REST_API_KEY 환경변수가 설정되지 않았습니다")
     redirect_uri = _get_dynamic_redirect_uri(request)
+    state = _new_oauth_state()
     q = urlencode({
         "client_id":     _KAKAO_REST_KEY,
         "redirect_uri":  redirect_uri,
         "response_type": "code",
+        "state":         state,
     })
     return RedirectResponse(f"https://kauth.kakao.com/oauth/authorize?{q}")
 
 
 @app.get("/api/auth/kakao/callback")
-async def kakao_oauth_callback(request: Request, code: str = Query(...), format: str = Query(None)):
+async def kakao_oauth_callback(
+    request: Request,
+    code: str = Query(...),
+    state: str = Query(None),
+    format: str = Query(None),
+):
     redirect_uri = _get_dynamic_redirect_uri(request)
 
     def _err(msg: str):
@@ -1447,6 +1505,10 @@ async def kakao_oauth_callback(request: Request, code: str = Query(...), format:
             f'setTimeout(function(){{window.close();}},2000);'
             f'</script></body></html>'
         )
+
+    # 0. CSRF state 검증
+    if not state or not _validate_oauth_state(state):
+        return _err("잘못된 요청입니다 (CSRF 검증 실패). 다시 로그인해 주세요.")
 
     # 1. 인가 코드 → 액세스 토큰
     # REST API 키는 클라이언트 시크릿 기본 활성화 상태 → client_secret 필수 포함
@@ -1568,6 +1630,34 @@ async def vp_update_profile(b: _VPProfileIn):
     u["skill"]            = b.skill
     u["profile_complete"] = True
     return {"status": "success", "data": u}
+
+
+# ── 회원 탈퇴 / 카카오 연결 끊기 ─────────────────────────────────
+
+class _VPWithdrawIn(_JModel):
+    token: str
+
+@app.post("/api/auth/kakao/withdraw")
+async def kakao_withdraw(b: _VPWithdrawIn):
+    u = _vp_user(b.token)          # 세션 없으면 401 자동 raise
+    kakao_id = u.get("kakao_id", "")
+
+    # 1. 카카오 연결 끊기 (admin key 방식 — access token 불필요)
+    if kakao_id and _KAKAO_ADMIN_KEY:
+        async with httpx.AsyncClient() as cl:
+            await cl.post(
+                "https://kapi.kakao.com/v1/user/unlink",
+                headers={"Authorization": f"KakaoAK {_KAKAO_ADMIN_KEY}"},
+                data={"target_id_type": "user_id", "target_id": kakao_id},
+                timeout=10,
+            )
+
+    # 2. 서버 내 사용자 데이터 파기 (개인정보 보호법 제21조)
+    _VP_SESSIONS.pop(b.token, None)
+    if kakao_id:
+        _KAKAO_ID_MAP.pop(kakao_id, None)
+
+    return {"status": "success", "message": "탈퇴가 완료되었습니다."}
 
 
 # ── 구장별 팀 매칭 ───────────────────────────────────────────────

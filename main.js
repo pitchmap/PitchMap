@@ -184,18 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     viewToggleBtn.addEventListener('click', () => setListView(!isListView));
 
-    // 플랫폼 필터: 클라이언트 측 즉시 반영 (숨겨진 select 동기)
-    document.getElementById('platform-filter')?.addEventListener('change', () => {
-        currentPlatformFilter = document.getElementById('platform-filter').value;
-        // 좌측 패널 토글 동기
-        _syncLeftPanelPlatformBtns(currentPlatformFilter);
-        applyFilters();
-        if (isListView) renderListView();
-    });
-    // 날짜 기간 필터: 새 API 요청 필요 (숨겨진 select 동기)
-    document.getElementById('days-filter')?.addEventListener('change', () => {
-        if (mapInitialized) fetchMatchData();
-    });
+    // 플랫폼/날짜 필터는 좌측 패널 컨트롤이 단일 소스 — 별도 hidden select 이벤트 불필요
 
     // ── 좌측 패널 컨트롤 연결 ────────────────────────────
     const leftPanel = document.getElementById('left-panel');
@@ -243,7 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 좌측 패널: 날짜 기한 변경
     if (lpDaysSelect) {
         lpDaysSelect.addEventListener('change', () => {
-            document.getElementById('days-filter').value = lpDaysSelect.value;
             if (mapInitialized) fetchMatchData();
         });
     }
@@ -253,8 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
             const pf = btn.dataset.pf;
             currentPlatformFilter = pf;
-            document.getElementById('platform-filter').value = pf;
-            // 토글 UI 업데이트
             _syncLeftPanelPlatformBtns(pf);
             applyFilters();
             if (isListView) renderListView();
@@ -606,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const pf  = currentPlatformFilter;
-            const days = document.getElementById('days-filter')?.value || 14;
+            const days = document.getElementById('lp-days-select')?.value || 14;
             const res = await fetch(`${API_BASE}/api/matches?region=${encodeURIComponent(region)}&days=${days}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json();
@@ -642,7 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const pf  = currentPlatformFilter;
-            const days = document.getElementById('days-filter')?.value || 14;
+            const days = document.getElementById('lp-days-select')?.value || 14;
             const res = await fetch(`${API_BASE}/api/matches?region=${encodeURIComponent(region)}&days=${days}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const result = await res.json();
@@ -989,25 +975,23 @@ document.addEventListener('DOMContentLoaded', () => {
             b.textContent = '✓ 대관 가능';
             panelStadium.insertAdjacentElement('afterend', b);
 
-            // 대관 아웃링크 버튼 (rental_url 또는 PUBLIC link)
+            // 대관 아웃링크 버튼 — window.open으로 URL 원문 그대로 전달 (HTML 인코딩 우회)
             const rentalMatch = stadiumData.matches.find(m => m.is_rental && m.rental_url);
             if (rentalMatch) {
+                const rentalUrl = rentalMatch.rental_url;
                 const label = rentalMatch.rental_platform_label
                     ? `${rentalMatch.rental_platform_label}로 대관하러 가기 →`
                     : '예약 페이지 바로가기 →';
-                const link = document.createElement('a');
-                link.id     = '_panel-rental-btn';
-                link.href   = rentalMatch.rental_url;
-                link.target = '_blank';
-                link.rel    = 'noopener';
-                link.style.cssText = 'display:block;margin-top:8px;padding:8px 14px;'
-                    + 'background:#2563eb;color:white;border-radius:10px;font-size:12px;'
-                    + 'font-weight:800;text-decoration:none;text-align:center;'
-                    + 'transition:opacity 0.18s;';
-                link.textContent = label;
-                link.addEventListener('mouseover', () => link.style.opacity = '0.85');
-                link.addEventListener('mouseout',  () => link.style.opacity = '1');
-                b.insertAdjacentElement('afterend', link);
+                const btn = document.createElement('button');
+                btn.id = '_panel-rental-btn';
+                btn.style.cssText = 'display:block;width:100%;margin-top:8px;padding:8px 14px;'
+                    + 'background:#2563eb;color:white;border-radius:10px;font-size:12px;border:none;'
+                    + 'font-weight:800;text-align:center;cursor:pointer;transition:opacity 0.18s;';
+                btn.textContent = label;
+                btn.addEventListener('mouseover', () => btn.style.opacity = '0.85');
+                btn.addEventListener('mouseout',  () => btn.style.opacity = '1');
+                btn.addEventListener('click', () => window.open(rentalUrl, '_blank', 'noopener'));
+                b.insertAdjacentElement('afterend', btn);
             }
         }
 
@@ -1954,6 +1938,21 @@ window.VenuePlatform = (function () {
         _loadTab(_activeTab);
     }
 
+    async function _withdraw() {
+        if (!_user) return;
+        const nick = _user.nickname;
+        if (!confirm(`${nick}님, 정말 탈퇴하시겠습니까?\n\n탈퇴 시 카카오 연결 해제 및 모든 데이터가 즉시 파기됩니다.`)) return;
+        try {
+            await fetch(`${_base()}/api/auth/kakao/withdraw`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: _user.token }),
+            });
+        } catch (_) {}
+        _logout();
+        alert('탈퇴가 완료되었습니다.');
+    }
+
     // ── 구장 섹션 주입 ───────────────────────────────────────────
     function load(venueName, isRental = false) {
         _loadSaved();
@@ -2035,10 +2034,17 @@ window.VenuePlatform = (function () {
                   ${kakaoTag}
                   <span style="font-size:11px;color:#64748b;">${_user.region || ''}</span>
                 </div>
-                <button onclick="VenuePlatform._logout()"
-                  style="font-size:11px;color:#94a3b8;border:none;background:none;cursor:pointer;">
-                  로그아웃
-                </button>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <button onclick="VenuePlatform._logout()"
+                    style="font-size:11px;color:#94a3b8;border:none;background:none;cursor:pointer;padding:0;">
+                    로그아웃
+                  </button>
+                  <span style="font-size:10px;color:#cbd5e1;">|</span>
+                  <button onclick="VenuePlatform._withdraw()"
+                    style="font-size:11px;color:#f87171;border:none;background:none;cursor:pointer;padding:0;">
+                    탈퇴
+                  </button>
+                </div>
               </div>`;
         } else {
             el.innerHTML = `
@@ -2497,6 +2503,6 @@ window.VenuePlatform = (function () {
 
     return { load, openLoginModal, closeLoginModal, submitLogin,
              openKakaoLogin, submitProfile,
-             _logout, _submitMatch, _submitRecruit, _joinRecruit,
+             _logout, _withdraw, _submitMatch, _submitRecruit, _joinRecruit,
              _submitReview, _onRadio };
 })();

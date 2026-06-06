@@ -196,11 +196,6 @@
             display: none;
         }
 
-        #days-filter,
-        #platform-filter {
-            display: none !important;
-        }
-
         .chip {
             display: inline-flex;
             align-items: center;
@@ -933,20 +928,6 @@
             <button class="chip active" data-date="ALL">전체</button>
             <!-- 날짜 칩은 데이터 로드 후 JS가 동적으로 삽입 -->
         </div>
-
-        <!-- hidden selects for JS reference (moved to left panel visually) -->
-        <select id="days-filter" style="display:none;">
-            <option value="7">7일</option>
-            <option value="14" selected>14일</option>
-            <option value="21">21일</option>
-            <option value="30">30일</option>
-        </select>
-        <select id="platform-filter" style="display:none;">
-            <option value="ALL">전체</option>
-            <option value="PLAB">플랩</option>
-            <option value="URBAN">어반</option>
-            <option value="PUBLIC">공공</option>
-        </select>
 
         <!-- ─── 좌측 패널 (filter/search) ─── -->
         <div id="left-panel">

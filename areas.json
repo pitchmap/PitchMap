@@ -152,6 +152,71 @@
       "platform_label": "플랩풋볼",
       "is_rental": true,
       "rental_url": "https://www.plabfootball.com/rental/venue/goyang-ilsan-futsal/"
+    },
+    "관악 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/gwanak-futsal-park/"
+    },
+    "영등포 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/yeongdeungpo-futsal/"
+    },
+    "광진 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/gwangjin-futsal/"
+    },
+    "중랑 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/jungnang-futsal-park/"
+    },
+    "서초 반포 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/seocho-banpo-futsal/"
+    },
+    "안양 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/anyang-futsal-park/"
+    },
+    "부천 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/bucheon-futsal-park/"
+    },
+    "안산 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/ansan-futsal-park/"
+    },
+    "인천 부평 풋살장": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/incheon-bupyeong-futsal/"
+    },
+    "대구 달서 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/daegu-dalseo-futsal/"
+    },
+    "대전 유성 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/daejeon-yuseong-futsal/"
+    },
+    "기장 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/gijang-futsal-park/"
+    },
+    "창원 FC 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/changwon-fc-futsal/"
     }
   },
   "junk_filter_keywords": ["레슨", "훈련", "이벤트", "클래스", "아카데미", "스킬 레슨", "일반 스킬", "키즈", "유소년", "교실"]
