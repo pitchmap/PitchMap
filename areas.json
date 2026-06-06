@@ -1,21 +1,69 @@
 {
   "regions": [
-    {"id": 1, "name": "서울"},
-    {"id": 2, "name": "경기"},
-    {"id": 3, "name": "인천"},
-    {"id": 9, "name": "강원"},
-    {"id": 4, "name": "대전/세종"},
-    {"id": 10, "name": "충남"},
-    {"id": 11, "name": "충북"},
-    {"id": 5, "name": "대구"},
-    {"id": 12, "name": "경북"},
-    {"id": 6, "name": "부산"},
-    {"id": 13, "name": "울산"},
-    {"id": 14, "name": "경남"},
-    {"id": 7, "name": "광주"},
-    {"id": 15, "name": "전남"},
-    {"id": 16, "name": "전북"},
-    {"id": 8, "name": "제주"}
+    {
+      "id": 1,
+      "name": "서울"
+    },
+    {
+      "id": 2,
+      "name": "경기"
+    },
+    {
+      "id": 3,
+      "name": "인천"
+    },
+    {
+      "id": 9,
+      "name": "강원"
+    },
+    {
+      "id": 4,
+      "name": "대전/세종"
+    },
+    {
+      "id": 10,
+      "name": "충남"
+    },
+    {
+      "id": 11,
+      "name": "충북"
+    },
+    {
+      "id": 5,
+      "name": "대구"
+    },
+    {
+      "id": 12,
+      "name": "경북"
+    },
+    {
+      "id": 6,
+      "name": "부산"
+    },
+    {
+      "id": 13,
+      "name": "울산"
+    },
+    {
+      "id": 14,
+      "name": "경남"
+    },
+    {
+      "id": 7,
+      "name": "광주"
+    },
+    {
+      "id": 15,
+      "name": "전남"
+    },
+    {
+      "id": 16,
+      "name": "전북"
+    },
+    {
+      "id": 8,
+      "name": "제주"
+    }
   ],
   "rental_venues": {
     "어반풋볼파크 사상점": {
@@ -31,17 +79,17 @@
     "어반풋볼파크 부산강서1호점": {
       "platform_label": "어반풋볼",
       "is_rental": true,
-      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=15&ref=main"
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=22&ref=main"
     },
     "어반풋볼파크 부산강서2호점": {
       "platform_label": "어반풋볼",
       "is_rental": true,
-      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=16&ref=main"
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=56&ref=main"
     },
     "어반풋볼파크 동래금정점": {
       "platform_label": "어반풋볼",
       "is_rental": true,
-      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=17&ref=main"
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=35&ref=main"
     },
     "어반풋볼파크 부산북구점": {
       "platform_label": "어반풋볼",
@@ -51,32 +99,42 @@
     "어반풋볼파크 양산점": {
       "platform_label": "어반풋볼",
       "is_rental": true,
-      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=20&ref=main"
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=57&ref=main"
     },
     "HM풋살파크 창원점": {
-      "platform_label": "어반풋볼",
+      "platform_label": "플레이온더피치",
       "is_rental": true,
-      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=21&ref=main"
+      "rental_url": "https://playonthepitch.kr/reserv"
     },
     "BJ풋살파크 마산점": {
       "platform_label": "어반풋볼",
+      "is_rental": false,
+      "rental_url": ""
+    },
+    "어반풋볼파크 부산신항점": {
+      "platform_label": "어반풋볼",
       "is_rental": true,
-      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=22&ref=main"
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=63&ref=main"
+    },
+    "어반풋볼파크 성남분당점": {
+      "platform_label": "어반풋볼",
+      "is_rental": true,
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=70&ref=main"
+    },
+    "어반풋볼파크 포항점": {
+      "platform_label": "어반풋볼",
+      "is_rental": true,
+      "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=64&ref=main"
     },
     "스포풋살파크": {
-      "platform_label": "플랩풋볼",
+      "platform_label": "스포원",
       "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/spo-futsal-park/"
+      "rental_url": "https://nrsv.spo1.or.kr/fmcs/42"
     },
     "센텀풋살장": {
       "platform_label": "플랩풋볼",
       "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/centum-futsal/"
-    },
-    "레인보우풋살파크 사하": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/rainbow-futsal-saha/"
+      "rental_url": "https://www.plabfootball.com/stadium/148/info/"
     },
     "BS89 연산": {
       "platform_label": "플랩풋볼",
@@ -84,24 +142,19 @@
       "rental_url": "https://www.plabfootball.com/stadium/112/info/"
     },
     "HM풋살파크 화명점": {
-      "platform_label": "어반풋볼",
-      "is_rental": false,
-      "rental_url": ""
+      "platform_label": "플레이온더피치",
+      "is_rental": true,
+      "rental_url": "https://playonthepitch.kr/reserv"
     },
     "백호 풋살파크 만덕": {
       "platform_label": "플랩풋볼",
       "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/baekho-futsal-park/"
+      "rental_url": "https://www.plabfootball.com/stadium/202/info/"
     },
     "주레 풋살파크": {
       "platform_label": "플랩풋볼",
       "is_rental": true,
       "rental_url": "https://www.plabfootball.com/stadium/3501/info/"
-    },
-    "더킥 풋살파크 해운대": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/thekick-futsal-haeundae/"
     },
     "플레이그라운드 풋살클럽": {
       "platform_label": "플랩풋볼",
@@ -122,101 +175,6 @@
       "platform_label": "플랩풋볼",
       "is_rental": true,
       "rental_url": "https://www.plabfootball.com/stadium/3582/info/"
-    },
-    "노원 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/nowon-futsal-park/"
-    },
-    "마포 상암 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/mapo-sangam-futsal/"
-    },
-    "성동 왕십리 풋살장": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/seongdong-wangsimni-futsal/"
-    },
-    "수원 영통 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/suwon-yeongdong-futsal/"
-    },
-    "성남 야탑 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/seongnam-yatap-futsal/"
-    },
-    "고양 일산 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/goyang-ilsan-futsal/"
-    },
-    "관악 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/gwanak-futsal-park/"
-    },
-    "영등포 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/yeongdeungpo-futsal/"
-    },
-    "광진 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/gwangjin-futsal/"
-    },
-    "중랑 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/jungnang-futsal-park/"
-    },
-    "서초 반포 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/seocho-banpo-futsal/"
-    },
-    "안양 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/anyang-futsal-park/"
-    },
-    "부천 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/bucheon-futsal-park/"
-    },
-    "안산 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/ansan-futsal-park/"
-    },
-    "인천 부평 풋살장": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/incheon-bupyeong-futsal/"
-    },
-    "대구 달서 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/daegu-dalseo-futsal/"
-    },
-    "대전 유성 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/daejeon-yuseong-futsal/"
-    },
-    "기장 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/gijang-futsal-park/"
-    },
-    "창원 FC 풋살파크": {
-      "platform_label": "플랩풋볼",
-      "is_rental": true,
-      "rental_url": "https://www.plabfootball.com/rental/venue/changwon-fc-futsal/"
     },
     "부산 프로픽 풋볼": {
       "platform_label": "플랩풋볼",
@@ -249,5 +207,16 @@
       "rental_url": "https://www.plabfootball.com/stadium/1177/info/"
     }
   },
-  "junk_filter_keywords": ["레슨", "훈련", "이벤트", "클래스", "아카데미", "스킬 레슨", "일반 스킬", "키즈", "유소년", "교실"]
+  "junk_filter_keywords": [
+    "레슨",
+    "훈련",
+    "이벤트",
+    "클래스",
+    "아카데미",
+    "스킬 레슨",
+    "일반 스킬",
+    "키즈",
+    "유소년",
+    "교실"
+  ]
 }

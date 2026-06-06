@@ -131,54 +131,29 @@ RENTAL_WHITELIST: dict[str, dict] = {
     # ── 어반풋볼 대관 파트너 (구장별 상세 페이지) ────────────────
     "어반풋볼파크 사상점":        {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=2&ref=main"},
     "어반풋볼파크 부산진구점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=2&ref=main"},
-    "어반풋볼파크 부산강서1호점": {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=15&ref=main"},
-    "어반풋볼파크 부산강서2호점": {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=16&ref=main"},
-    "어반풋볼파크 동래금정점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=17&ref=main"},
+    "어반풋볼파크 부산강서1호점": {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=22&ref=main"},
+    "어반풋볼파크 부산강서2호점": {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=56&ref=main"},
+    "어반풋볼파크 동래금정점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=35&ref=main"},
     "어반풋볼파크 부산북구점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=19&ref=main"},
-    "어반풋볼파크 양산점":        {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=20&ref=main"},
-    "HM풋살파크 창원점":          {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=21&ref=main"},
-    "BJ풋살파크 마산점":          {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=22&ref=main"},
+    "어반풋볼파크 양산점":        {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=57&ref=main"},
+    "어반풋볼파크 부산신항점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=63&ref=main"},
+    "어반풋볼파크 성남분당점":    {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=70&ref=main"},
+    "어반풋볼파크 포항점":        {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=64&ref=main"},
+    # ── HM풋살파크 — 플레이온더피치(P.O.P) 예약 ─────────────────
+    "HM풋살파크 화명점":          {"platform_label": "플레이온더피치", "rental_url": "https://playonthepitch.kr/reserv"},
+    "HM풋살파크 창원점":          {"platform_label": "플레이온더피치", "rental_url": "https://playonthepitch.kr/reserv"},
     # ── 플랩풋볼 대관 파트너 (구장별 상세 페이지) ────────────────
     # 부산·경남권
-    "스포풋살파크":               {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/spo-futsal-park/"},
-    "센텀풋살장":                 {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/centum-futsal/"},
-    "레인보우풋살파크 사하":      {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/rainbow-futsal-saha/"},
+    "스포풋살파크":               {"platform_label": "스포원",   "rental_url": "https://nrsv.spo1.or.kr/fmcs/42"},
+    "센텀풋살장":                 {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/148/info/"},
+    "백호 풋살파크 만덕":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/202/info/"},
     "BS89 연산":                  {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/112/info/"},
-    "백호 풋살파크 만덕":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/baekho-futsal-park/"},
     "주레 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/3501/info/"},
-    "더킥 풋살파크 해운대":       {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/thekick-futsal-haeundae/"},
     "플레이그라운드 풋살클럽":    {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/148/info/"},
     # 수도권 (서울)
     "강동 송파 풋살장":           {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/244/info/"},
     "강북 아크 풋살 스타디움":    {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/3545/info/"},
     "강서 KBS 스포츠월드":        {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/3582/info/"},
-    "노원 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/nowon-futsal-park/"},
-    "마포 상암 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/mapo-sangam-futsal/"},
-    "성동 왕십리 풋살장":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/seongdong-wangsimni-futsal/"},
-    # 수도권 (경기)
-    "수원 영통 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/suwon-yeongdong-futsal/"},
-    "성남 야탑 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/seongnam-yatap-futsal/"},
-    "고양 일산 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/goyang-ilsan-futsal/"},
-    # 수도권 (서울) 추가
-    "관악 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gwanak-futsal-park/"},
-    "영등포 풋살파크":            {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/yeongdeungpo-futsal/"},
-    "광진 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gwangjin-futsal/"},
-    "중랑 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/jungnang-futsal-park/"},
-    "서초 반포 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/seocho-banpo-futsal/"},
-    # 수도권 (경기) 추가
-    "안양 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/anyang-futsal-park/"},
-    "부천 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/bucheon-futsal-park/"},
-    "안산 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/ansan-futsal-park/"},
-    # 인천
-    "인천 부평 풋살장":           {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/incheon-bupyeong-futsal/"},
-    # 대구
-    "대구 달서 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/daegu-dalseo-futsal/"},
-    # 대전/세종
-    "대전 유성 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/daejeon-yuseong-futsal/"},
-    # 부산 추가
-    "기장 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gijang-futsal-park/"},
-    # 경남 추가
-    "창원 FC 풋살파크":           {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/changwon-fc-futsal/"},
     # 부산 Plab 추가
     "부산 프로픽 풋볼":           {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/201/info/"},
     "부산 준타스 풋살 아레나":    {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/stadium/212/info/"},
@@ -189,9 +164,7 @@ RENTAL_WHITELIST: dict[str, dict] = {
 }
 
 # 대관 불가 구장 블랙리스트 — 소셜매치 전용 (리뷰만 표시)
-NO_RENTAL_STADIUMS: set[str] = {
-    "HM풋살파크 화명점",
-}
+NO_RENTAL_STADIUMS: set[str] = {}
 
 # 오염된 크롤링 데이터 필터 키워드 — 이벤트/교육/레슨 타이틀 원천 차단
 JUNK_FILTER_KEYWORDS: list[str] = [
@@ -207,43 +180,28 @@ STADIUM_MAPPING = {
     "어반풋볼파크 부산동래금정점":    "어반풋볼파크 동래금정점",
     "어반풋볼파크 부산북구점":        "어반풋볼파크 부산북구점",
     "부산 센텀풋살장(구 놀이터클럽)": "센텀풋살장",
-    "부산 레인보우풋살파크 사하":     "레인보우풋살파크 사하",
     "부산 BS89 연산(실내)":           "BS89 연산",
     "부산 스포 풋살 파크":            "스포풋살파크",
     "화명생태공원":                   "화명생태공원",
     "어반풋볼파크 양산점":            "어반풋볼파크 양산점",
     "HM풋살파크 창원점":              "HM풋살파크 창원점",
     "BJ풋살파크 마산점":              "BJ풋살파크 마산점",
-    # 플랩풋볼 신규 구장 매핑
+    # 플랩풋볼 구장 매핑
     "부산 백호 풋살파크 만덕점":      "백호 풋살파크 만덕",
     "부산 주레 풋살파크":             "주레 풋살파크",
-    "부산 더킥 풋살파크 해운대":      "더킥 풋살파크 해운대",
     "부산 플레이그라운드 풋살클럽":   "플레이그라운드 풋살클럽",
     "서울 강동 송파 풋살장":          "강동 송파 풋살장",
     "서울 강북 아크 풋살 스타디움 실내": "강북 아크 풋살 스타디움",
     "서울 강북 아크 풋살 스타디움":   "강북 아크 풋살 스타디움",
     "서울 강서 KBS 스포츠월드":       "강서 KBS 스포츠월드",
-    "서울 노원 풋살파크":             "노원 풋살파크",
-    "서울 마포 상암 풋살파크":        "마포 상암 풋살파크",
-    "서울 성동 왕십리 풋살장":        "성동 왕십리 풋살장",
-    "경기 수원 영통 풋살파크":        "수원 영통 풋살파크",
-    "경기 성남 야탑 풋살파크":        "성남 야탑 풋살파크",
-    "경기 고양 일산 풋살파크":        "고양 일산 풋살파크",
-    # 추가 플랩 구장 정규화
-    "서울 관악 풋살파크":             "관악 풋살파크",
-    "서울 영등포 풋살파크":           "영등포 풋살파크",
-    "서울 광진 풋살파크":             "광진 풋살파크",
-    "서울 중랑 풋살파크":             "중랑 풋살파크",
-    "서울 서초 반포 풋살파크":        "서초 반포 풋살파크",
-    "경기 안양 풋살파크":             "안양 풋살파크",
-    "경기 부천 풋살파크":             "부천 풋살파크",
-    "경기 안산 풋살파크":             "안산 풋살파크",
-    "인천 부평 풋살장":               "인천 부평 풋살장",
-    "부산 기장 풋살파크":             "기장 풋살파크",
-    "경남 창원 FC 풋살파크":          "창원 FC 풋살파크",
     # 부산 Plab 추가 구장 정규화
     "남부환경체육공원 축구장":         "남부환경체육공원축구장",
     "부산 남부환경체육공원":           "남부환경체육공원축구장",
+    # 어반풋볼 신규 구장 정규화
+    "부산 어반풋볼파크 신항점":        "어반풋볼파크 부산신항점",
+    "어반풋볼파크 신항점":             "어반풋볼파크 부산신항점",
+    "경기 어반풋볼파크 성남분당점":    "어반풋볼파크 성남분당점",
+    "경북 어반풋볼파크 포항점":        "어반풋볼파크 포항점",
 }
 
 REGION_MAPPING = {
@@ -783,6 +741,18 @@ def get_public_dummy_matches(now: datetime.datetime, region: str) -> list:
             ("남부환경체육공원 축구장", "남부환경체육공원",
              "온라인", "https://www.plabfootball.com/stadium/1177/info/",
              "051-607-4000", "부산 남구 소재. 플랩풋볼을 통한 소셜매치 예약 가능. 야외 잔디 구장."),
+            ("다대풋살센터", "다대풋살센터",
+             "온라인", "https://reserve.busan.go.kr/",
+             "051-220-4000", "부산 사하구 다대동 소재. 부산시 공공서비스예약(reserve.busan.go.kr) 통해 예약."),
+            ("오륜동 인조잔디구장", "오륜동 인조잔디구장",
+             "전화", "",
+             "051-709-4200", "부산 기장군 철마면 오륜동 소재. 기장군청 문화체육과 문의. 야외 인조잔디 구장."),
+            ("영도마린축구장", "영도마린축구장",
+             "온라인", "https://reserve.busan.go.kr/",
+             "051-419-4852", "부산 영도구 해양로 307(동삼동) 소재. 매월 첫 평일 14시 익월분 예약 오픈. 부산시 공공서비스예약 이용."),
+            ("동읍주민운동장 축구장", "동읍주민운동장",
+             "전화", "",
+             "051-709-4000", "부산 기장군 동읍 소재. 기장군청 문화체육과 문의 후 대관."),
         ],
         "경기": [
             ("수원 월드컵경기장 보조구장", "수원월드컵경기장",
