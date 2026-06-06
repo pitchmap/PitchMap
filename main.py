@@ -138,10 +138,26 @@ RENTAL_WHITELIST: dict[str, dict] = {
     "HM풋살파크 창원점":          {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=21&ref=main"},
     "BJ풋살파크 마산점":          {"platform_label": "어반풋볼", "rental_url": "https://urbanfootball.co.kr/goods/goods_rent_stadium_view.html?no=22&ref=main"},
     # ── 플랩풋볼 대관 파트너 (구장별 상세 페이지) ────────────────
+    # 부산·경남권
     "스포풋살파크":               {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/spo-futsal-park/"},
     "센텀풋살장":                 {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/centum-futsal/"},
     "레인보우풋살파크 사하":      {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/rainbow-futsal-saha/"},
     "BS89 연산":                  {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/bs89-yeonsan/"},
+    "백호 풋살파크 만덕":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/baekho-futsal-park/"},
+    "주레 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/jure-futsal-park/"},
+    "더킥 풋살파크 해운대":       {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/thekick-futsal-haeundae/"},
+    "플레이그라운드 풋살클럽":    {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/playground-futsal/"},
+    # 수도권 (서울)
+    "강동 송파 풋살장":           {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gangdong-songpa-futsal/"},
+    "강북 아크 풋살 스타디움":    {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gangbuk-arc-futsal/"},
+    "강서 KBS 스포츠월드":        {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/gangseo-kbs-sportsworld/"},
+    "노원 풋살파크":              {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/nowon-futsal-park/"},
+    "마포 상암 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/mapo-sangam-futsal/"},
+    "성동 왕십리 풋살장":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/seongdong-wangsimni-futsal/"},
+    # 수도권 (경기)
+    "수원 영통 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/suwon-yeongdong-futsal/"},
+    "성남 야탑 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/seongnam-yatap-futsal/"},
+    "고양 일산 풋살파크":         {"platform_label": "플랩풋볼", "rental_url": "https://www.plabfootball.com/rental/venue/goyang-ilsan-futsal/"},
 }
 
 # 대관 불가 구장 블랙리스트 — 소셜매치 전용 (리뷰만 표시)
@@ -170,6 +186,21 @@ STADIUM_MAPPING = {
     "어반풋볼파크 양산점":            "어반풋볼파크 양산점",
     "HM풋살파크 창원점":              "HM풋살파크 창원점",
     "BJ풋살파크 마산점":              "BJ풋살파크 마산점",
+    # 플랩풋볼 신규 구장 매핑
+    "부산 백호 풋살파크 만덕점":      "백호 풋살파크 만덕",
+    "부산 주레 풋살파크":             "주레 풋살파크",
+    "부산 더킥 풋살파크 해운대":      "더킥 풋살파크 해운대",
+    "부산 플레이그라운드 풋살클럽":   "플레이그라운드 풋살클럽",
+    "서울 강동 송파 풋살장":          "강동 송파 풋살장",
+    "서울 강북 아크 풋살 스타디움 실내": "강북 아크 풋살 스타디움",
+    "서울 강북 아크 풋살 스타디움":   "강북 아크 풋살 스타디움",
+    "서울 강서 KBS 스포츠월드":       "강서 KBS 스포츠월드",
+    "서울 노원 풋살파크":             "노원 풋살파크",
+    "서울 마포 상암 풋살파크":        "마포 상암 풋살파크",
+    "서울 성동 왕십리 풋살장":        "성동 왕십리 풋살장",
+    "경기 수원 영통 풋살파크":        "수원 영통 풋살파크",
+    "경기 성남 야탑 풋살파크":        "성남 야탑 풋살파크",
+    "경기 고양 일산 풋살파크":        "고양 일산 풋살파크",
 }
 
 REGION_MAPPING = {
@@ -1108,6 +1139,18 @@ _KAKAO_REDIRECT = os.environ.get(
     "KAKAO_REDIRECT_URI", "http://127.0.0.1:8000/api/auth/kakao/callback"
 )
 _KAKAO_ID_MAP: dict[str, str] = {}   # kakao_id → session token (서버 재시작 전 재사용)
+
+def _get_dynamic_redirect_uri(request: Request) -> str:
+    host = request.headers.get("host", "")
+    forwarded_proto = request.headers.get("x-forwarded-proto", "")
+    is_local = any(h in host for h in ("localhost", "127.0.0.1", "0.0.0.0"))
+    if is_local:
+        scheme = "http"
+    elif forwarded_proto:
+        scheme = forwarded_proto
+    else:
+        scheme = "https"
+    return f"{scheme}://{host}/api/auth/kakao/callback"
 _HTML_PATH      = Path(__file__).parent / "index.html"
 
 @app.get("/api/config")
@@ -1369,19 +1412,22 @@ async def vp_me(token: str):
 # ── 카카오 OAuth ─────────────────────────────────────────────────
 
 @app.get("/api/auth/kakao/login")
-async def kakao_oauth_start():
+async def kakao_oauth_start(request: Request):
     if not _KAKAO_REST_KEY:
         raise HTTPException(503, "KAKAO_REST_API_KEY 환경변수가 설정되지 않았습니다")
+    redirect_uri = _get_dynamic_redirect_uri(request)
     q = urlencode({
         "client_id":     _KAKAO_REST_KEY,
-        "redirect_uri":  _KAKAO_REDIRECT,
+        "redirect_uri":  redirect_uri,
         "response_type": "code",
     })
     return RedirectResponse(f"https://kauth.kakao.com/oauth/authorize?{q}")
 
 
 @app.get("/api/auth/kakao/callback")
-async def kakao_oauth_callback(code: str = Query(...), format: str = Query(None)):
+async def kakao_oauth_callback(request: Request, code: str = Query(...), format: str = Query(None)):
+    redirect_uri = _get_dynamic_redirect_uri(request)
+
     def _err(msg: str):
         if format == "json":
             raise HTTPException(400, detail=msg)
@@ -1393,22 +1439,23 @@ async def kakao_oauth_callback(code: str = Query(...), format: str = Query(None)
             f'<p style="font-weight:700;color:#dc2626;margin-bottom:6px;">로그인 오류</p>'
             f'<p style="font-size:13px;color:#64748b;">{msg}</p>'
             f'<script>'
+            f'var _to=(location.hostname==="localhost"||location.hostname==="127.0.0.1")?'
+            f'"http://"+location.host:location.origin;'
             f'if(window.opener&&!window.opener.closed){{'
-            f'window.opener.postMessage({{type:"KAKAO_LOGIN_ERR",msg:{msg_j}}},"*");'
+            f'window.opener.postMessage({{type:"KAKAO_LOGIN_ERR",msg:{msg_j}}},_to);'
             f'}}'
             f'setTimeout(function(){{window.close();}},2000);'
             f'</script></body></html>'
         )
 
     # 1. 인가 코드 → 액세스 토큰
+    # Client Secret 미사용 앱: 5대 필수 파라미터만 전송 (client_secret 완전 배제)
     token_data = {
         "grant_type": "authorization_code",
         "client_id": _KAKAO_REST_KEY,
-        "redirect_uri": _KAKAO_REDIRECT,
-        "code": code
+        "redirect_uri": redirect_uri,
+        "code": code,
     }
-    if _KAKAO_CLIENT_SECRET:
-        token_data["client_secret"] = _KAKAO_CLIENT_SECRET
 
     async with httpx.AsyncClient() as cl:
         tr = await cl.post(
@@ -1484,9 +1531,11 @@ body{{font-family:'Apple SD Gothic Neo',sans-serif;background:#f8fafc;
 <script>
 (function(){{
   var u={user_json};
+  var _to=(location.hostname==='localhost'||location.hostname==='127.0.0.1')
+    ?'http://'+location.host:location.origin;
   try{{
     if(window.opener&&!window.opener.closed){{
-      window.opener.postMessage({{type:'KAKAO_LOGIN_DONE',user:u}},'*');
+      window.opener.postMessage({{type:'KAKAO_LOGIN_DONE',user:u}},_to);
     }}else{{
       localStorage.setItem('pm_user',JSON.stringify(u));
       window.location.replace('/');

@@ -87,6 +87,71 @@
       "platform_label": "어반풋볼",
       "is_rental": false,
       "rental_url": ""
+    },
+    "백호 풋살파크 만덕": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/baekho-futsal-park/"
+    },
+    "주레 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/jure-futsal-park/"
+    },
+    "더킥 풋살파크 해운대": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/thekick-futsal-haeundae/"
+    },
+    "플레이그라운드 풋살클럽": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/playground-futsal/"
+    },
+    "강동 송파 풋살장": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/gangdong-songpa-futsal/"
+    },
+    "강북 아크 풋살 스타디움": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/gangbuk-arc-futsal/"
+    },
+    "강서 KBS 스포츠월드": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/gangseo-kbs-sportsworld/"
+    },
+    "노원 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/nowon-futsal-park/"
+    },
+    "마포 상암 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/mapo-sangam-futsal/"
+    },
+    "성동 왕십리 풋살장": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/seongdong-wangsimni-futsal/"
+    },
+    "수원 영통 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/suwon-yeongdong-futsal/"
+    },
+    "성남 야탑 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/seongnam-yatap-futsal/"
+    },
+    "고양 일산 풋살파크": {
+      "platform_label": "플랩풋볼",
+      "is_rental": true,
+      "rental_url": "https://www.plabfootball.com/rental/venue/goyang-ilsan-futsal/"
     }
   },
   "junk_filter_keywords": ["레슨", "훈련", "이벤트", "클래스", "아카데미", "스킬 레슨", "일반 스킬", "키즈", "유소년", "교실"]

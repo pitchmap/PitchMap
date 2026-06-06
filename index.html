@@ -196,7 +196,8 @@
             display: none;
         }
 
-        #days-filter, #platform-filter {
+        #days-filter,
+        #platform-filter {
             display: none !important;
         }
 
@@ -614,20 +615,24 @@
         /* ── 좌측 패널 (전체화면 지도 위 플로팅 처리) ─── */
         #left-panel {
             position: absolute;
-            top: 110px; /* 탑바와 칩바 아래에서 시작 */
+            top: 110px;
+            /* 탑바와 칩바 아래에서 시작 */
             left: 14px;
             bottom: 20px;
             width: 260px;
-            background: transparent; /* 뒷배경 투명화 */
+            background: transparent;
+            /* 뒷배경 투명화 */
             border-right: none;
             box-shadow: none;
-            z-index: 22; /* 맵 레이어 위로 완전히 올림 */
+            z-index: 22;
+            /* 맵 레이어 위로 완전히 올림 */
             display: flex;
             flex-direction: column;
             padding: 0;
             gap: 10px;
             overflow-y: auto;
-            pointer-events: none; /* 지도가 뒤에 가려져도 드래그되도록 컨테이너 자체는 마우스 이벤트 통과 */
+            pointer-events: none;
+            /* 지도가 뒤에 가려져도 드래그되도록 컨테이너 자체는 마우스 이벤트 통과 */
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -635,8 +640,9 @@
             display: none;
         }
 
-        #left-panel > * {
-            pointer-events: auto; /* 패널 내부 필터 카드들은 정상 클릭 가능하도록 설정 */
+        #left-panel>* {
+            pointer-events: auto;
+            /* 패널 내부 필터 카드들은 정상 클릭 가능하도록 설정 */
         }
 
         /* 모바일 대응 슬라이드 효과 */
@@ -652,14 +658,17 @@
                 transform: translateX(-280px);
                 z-index: 35;
                 box-shadow: 8px 0 24px rgba(0, 0, 0, 0.15);
-                pointer-events: auto; /* 모바일 슬라이드 메뉴는 기존대로 동작 */
+                pointer-events: auto;
+                /* 모바일 슬라이드 메뉴는 기존대로 동작 */
             }
-            #left-panel > * {
+
+            #left-panel>* {
                 background: transparent;
                 box-shadow: none;
                 border: none;
                 padding: 0;
             }
+
             #left-panel.open {
                 transform: translateX(0);
             }
@@ -862,8 +871,7 @@
             <!-- 좌측패널 토글 (모바일용) -->
             <button id="left-panel-toggle" class="flex-shrink-0 flex items-center gap-1 border border-slate-200 rounded-lg
                            px-2.5 py-1.5 text-xs font-bold text-slate-600 hover:text-blue-600
-                           hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
-                    style="display:none;">
+                           hover:border-blue-300 hover:bg-blue-50 transition-all duration-200" style="display:none;">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h6" />
                 </svg>
@@ -998,7 +1006,7 @@
             <div class="lp-section">
                 <div class="lp-label">🔍 구장 검색</div>
                 <input id="lp-stadium-search" type="text" placeholder="구장명으로 검색..." class="lp-select"
-                       style="font-weight:500;">
+                    style="font-weight:500;">
             </div>
 
             <!-- 범례 -->
@@ -1302,11 +1310,40 @@
                 </label>
             </div>
 
-            <button onclick="VenuePlatform.submitProfile()" style="width:100%;padding:14px;background:#2563eb;color:#fff;
-                       border:none;border-radius:12px;font-weight:900;font-size:14px;
-                       cursor:pointer;transition:opacity 0.18s;" onmouseover="this.style.opacity='0.85'"
-                onmouseout="this.style.opacity='1'">
-                프로필 저장하고 시작하기 →
+            <!-- 개인정보 수집 및 이용 동의 (필수) -->
+            <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:13px 14px;margin-bottom:16px;">
+                <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;">
+                    <input type="checkbox" id="pm-privacy-agree"
+                           style="width:17px;height:17px;cursor:pointer;accent-color:#2563eb;flex-shrink:0;"
+                           onchange="
+                             var btn = document.getElementById('pm-profile-submit-btn');
+                             btn.disabled = !this.checked;
+                             btn.style.background = this.checked ? '#2563eb' : '#94a3b8';
+                             btn.style.cursor = this.checked ? 'pointer' : 'not-allowed';
+                             btn.style.opacity = this.checked ? '1' : '0.65';
+                           ">
+                    <label for="pm-privacy-agree" style="font-size:13px;font-weight:800;color:#1e293b;cursor:pointer;flex:1;min-width:0;">
+                        개인정보 수집 및 이용 동의 <span style="color:#dc2626;">(필수)</span>
+                    </label>
+                    <button type="button"
+                            onclick="var d=document.getElementById('pm-privacy-detail');d.style.display=d.style.display==='none'?'block':'none';"
+                            style="font-size:11px;color:#2563eb;border:1px solid #bfdbfe;background:#eff6ff;
+                                   border-radius:6px;padding:3px 9px;cursor:pointer;font-weight:700;
+                                   white-space:nowrap;flex-shrink:0;">
+                        내용 보기
+                    </button>
+                </div>
+                <div id="pm-privacy-detail" style="display:none;margin-top:10px;background:#f1f5f9;border-radius:8px;
+                     padding:10px 12px;font-size:11.5px;color:#475569;line-height:1.6;border:1px solid #e2e8f0;">
+                    피치맵 서비스 이용 및 1인 1계정 중복 가입 방지를 위해 카카오 고유 식별자(ID)와 닉네임을 수집하며, 탈퇴 시 즉시 파기합니다.
+                </div>
+            </div>
+
+            <button id="pm-profile-submit-btn" onclick="VenuePlatform.submitProfile()"
+                    style="width:100%;padding:14px;background:#94a3b8;color:#fff;
+                           border:none;border-radius:12px;font-weight:900;font-size:14px;
+                           cursor:not-allowed;transition:all 0.18s;opacity:0.65;" disabled>
+                프로필 등록 완료 →
             </button>
         </div>
     </div>

@@ -1889,6 +1889,14 @@ window.VenuePlatform = (function () {
     // ── 프로필 설정 저장 (닉네임·지역·포지션·실력) ──────────────
     async function submitProfile() {
         if (!_user) return;
+
+        // 개인정보 수집 동의 필수 체크
+        const privacyEl = document.getElementById('pm-privacy-agree');
+        if (privacyEl && !privacyEl.checked) {
+            alert('개인정보 수집 및 이용에 동의해야 프로필을 등록할 수 있습니다.');
+            return;
+        }
+
         const nickname = $('pm-profile-nick')?.value?.trim() || _user.nickname;
         const region   = $('pm-profile-region')?.value?.trim();
         const pos      = document.querySelector('input[name="pm-profile-pos-r"]:checked')?.value
@@ -2418,6 +2426,7 @@ window.VenuePlatform = (function () {
     // ── 카카오 팝업 → postMessage 수신 ──────────────────────────
     window.addEventListener('message', function(e) {
         if (!e.data || typeof e.data !== 'object') return;
+        if (e.origin !== window.location.origin) return;
 
         if (e.data.type === 'KAKAO_LOGIN_DONE') {
             const user = e.data.user;
@@ -2438,6 +2447,16 @@ window.VenuePlatform = (function () {
                 if (av && user.avatar) { av.src = user.avatar; av.style.display = 'inline-block'; }
                 const nickEl = $('pm-profile-nick');
                 if (nickEl) nickEl.value = user.nickname || '';
+                // 개인정보 동의 체크박스 & 제출 버튼 초기화
+                const privacyCb = $('pm-privacy-agree');
+                if (privacyCb) { privacyCb.checked = false; }
+                const submitBtn = $('pm-profile-submit-btn');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.background = '#94a3b8';
+                    submitBtn.style.cursor = 'not-allowed';
+                    submitBtn.style.opacity = '0.65';
+                }
                 const modal = $('pm-profile-modal');
                 if (modal) modal.style.display = 'flex';
             } else {
